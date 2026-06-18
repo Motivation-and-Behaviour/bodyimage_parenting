@@ -1,6 +1,6 @@
-# Project Name
+# Body Image and Parenting Trajectory Analysis
 
-> One-line description of what this project does.
+Analysis of body image trajectories in the Longitudinal Study of Australian Children (LSAC) and their association with parenting styles.
 
 ## Environment
 
@@ -69,12 +69,4 @@ data/           raw data — gitignored
 temp/           intermediate files — gitignored
 ```
 
-## Using This Template
 
-This is a GitHub template repository. To start a new project:
-
-1. Click **Use this template** on GitHub.
-2. Rename `"your-project-name"` in `.devcontainer/devcontainer.json`.
-3. Update the data mount path in `.devcontainer/devcontainer.json` to point at
-   your local data directory.
-4. Open in VS Code with the Dev Containers extension and rebuild the container.
