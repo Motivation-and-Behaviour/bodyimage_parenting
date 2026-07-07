@@ -1,13 +1,37 @@
 library(targets)
-
-lapply(list.files("R", pattern = "\\.R$", full.names = TRUE), source)
+library(tarchetypes)
 
 tar_option_set(
-  packages = character() # add packages your targets need
+  packages = c("dplyr"),
+  controller = crew::crew_controller_local(
+    workers = min(parallel::detectCores() - 2, 20),
+    seconds_idle = 15
+  )
 )
+
+tar_source()
+
+lsac_files <- c(
+  "lsacgrb8.sav",
+  "lsacgrb10.sav",
+  "lsacgrb12.sav",
+  "lsacgrk8.sav",
+  "lsacgrk10.sav",
+  "lsacgrk12.sav"
+)
+lsac_path <- "/data/2 LSAC 10 General Release/Survey Data/SPSS"
+input_files <- file.path(lsac_path, lsac_files)
+
 
 # Replace these example targets with your own analysis steps
 list(
-  tar_target(example_data, make_example_data()),
-  tar_target(example_summary, summarise_example(example_data))
+  tar_files_input(waves, input_files),
+  tar_target(
+    waves_data,
+    read_waves_data(waves),
+    pattern = map(waves),
+    iteration = "list",
+    format = "qs"
+  ),
+  tar_target(waves_joined, dplyr::bind_rows(waves_data), format = "qs")
 )
