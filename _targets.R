@@ -2,7 +2,15 @@ library(targets)
 library(tarchetypes)
 
 tar_option_set(
-  packages = c("dplyr"),
+  packages = c(
+    "dplyr",
+    "forcats",
+    "labelled",
+    "tableone",
+    "janitor",
+    "stringr",
+    "glue"
+  ),
   controller = crew::crew_controller_local(
     workers = min(parallel::detectCores() - 2, 20),
     seconds_idle = 15
@@ -33,5 +41,8 @@ list(
     iteration = "list",
     format = "qs"
   ),
-  tar_target(waves_joined, dplyr::bind_rows(waves_data), format = "qs")
+  tar_target(waves_joined, dplyr::bind_rows(waves_data), format = "qs"),
+  tar_target(df_tidy, tidy_data(waves_joined), format = "qs"),
+  tar_target(df_clean, clean_data(df_tidy), format = "qs"),
+  tar_target(descriptives_table, make_descriptives_table(df_clean))
 )
