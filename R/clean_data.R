@@ -72,6 +72,12 @@ clean_data <- function(df_tidy, remove_outliers = TRUE) {
           body_discrepancy > 0 ~ "Larger than ideal"
         ),
         levels = c("Thinner than ideal", "Ideal", "Larger than ideal")
+      ),
+      # Direction-agnostic version: any perceived-ideal mismatch counts as
+      # dissatisfied, regardless of which way or by how much.
+      body_dissatisfied = factor(
+        dplyr::if_else(body_discrepancy == 0, "Satisfied", "Dissatisfied"),
+        levels = c("Satisfied", "Dissatisfied")
       )
     ) |>
     dplyr::select(-body_perceived, -body_ideal)
@@ -87,6 +93,7 @@ clean_data <- function(df_tidy, remove_outliers = TRUE) {
     body_image_wants = "Body Image (Ideal)",
     body_discrepancy = "Body Dissatisfaction (Perceived - Ideal)",
     body_dissatisfaction = "Body Dissatisfaction",
+    body_dissatisfied = "Body Dissatisfaction (Any Direction)",
     parenting_warm_p1 = "Parental Warmth (Parent 1)",
     parenting_warm_p2 = "Parental Warmth (Parent 2)",
     parenting_warm_m = "Parental Warmth (Mother)",

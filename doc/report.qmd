@@ -75,11 +75,29 @@ knitr::kable(
 
 ::: {.callout-note title="Interpretation"}
 - All the means look about what you would expect, and the standard deviations are reasonable.
+- The direction-agnostic dissatisfaction indicator ("Any Direction") shows just under half of children pick an ideal different from their current figure at every age.
 - The dissatisfaction also looks broadly like you would expect: most children either pick an ideal the same as their current, or a smaller one, with a smaller share picking a larger ideal.
 - Body dissatisfaction actually seems to fall slightly with age, counter to what I would have expected (might need to check if this has anything to do with non-response bias?)
 - BMI rises with age as expected, but the z-score is consistent. 
 - Parental warmth drifts down (but barely) and parental anger is broadly flat across age.
 - Parent 1 is clearly the mother in most cases, and parent 2 is the father in most cases, given the match of means.
+:::
+
+## By sex within age group
+
+```{r tbl-by-sex-age}
+knitr::kable(
+  descriptives$by_sex_age,
+  caption = "Descriptive statistics by sex within age group (cohorts pooled)."
+)
+```
+
+::: {.callout-note title="Interpretation"}
+- The decline in dissatisfaction with age noted above is mostly a boys' pattern: any-direction dissatisfaction falls steadily for boys (53.5% → 44.5% → 41.1%), while for girls it drops from 8 to 10 (52.2% → 44.8%) and then rises again at 12 (47.2%).
+- The rebound for girls at 12 is driven by "larger than ideal" (38.9% → 42.6%), whereas for boys "larger than ideal" keeps falling (40.3% → 36.0% → 32.1%) — plausibly early-puberty timing for girls.
+- "Thinner than ideal" declines with age in both sexes but is roughly twice as common in boys at every age.
+- Together this suggests both the level (at older ages) and especially the direction of dissatisfaction are sex-related, so models should be sex-stratified.
+
 :::
 
 # Preliminary plots

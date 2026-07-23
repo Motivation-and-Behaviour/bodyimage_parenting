@@ -23,6 +23,7 @@ make_descriptives_table <- function(df_clean) {
       body_image_wants,
       body_discrepancy,
       body_dissatisfaction,
+      body_dissatisfied,
       dplyr::starts_with("parenting_"),
       -dplyr::ends_with("_z")
     ) |>
@@ -34,9 +35,10 @@ make_descriptives_table <- function(df_clean) {
       )
     )
 
-  vars <- setdiff(colnames(table_df), c("age_cat", "cohort"))
-
   make_table <- function(strata) {
+    # Stratifying variables can't also be summary rows (e.g. drop sex from the
+    # rows when stratifying by sex).
+    vars <- setdiff(colnames(table_df), c("age_cat", "cohort", strata))
     tab <- tableone::CreateTableOne(
       vars = vars,
       strata = strata,
@@ -50,6 +52,7 @@ make_descriptives_table <- function(df_clean) {
 
   list(
     by_age = make_table("age_cat"),
-    by_cohort_age = make_table(c("cohort", "age_cat"))
+    by_cohort_age = make_table(c("cohort", "age_cat")),
+    by_sex_age = make_table(c("sex", "age_cat"))
   )
 }
