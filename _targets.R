@@ -10,7 +10,13 @@ tar_option_set(
     "janitor",
     "stringr",
     "glue",
-    "ggplot2"
+    "ggplot2",
+    "lcmm",
+    "nnet",
+    "tidyr",
+    "purrr",
+    "broom",
+    "tibble"
   ),
   controller = crew::crew_controller_local(
     workers = min(parallel::detectCores() - 2, 20),
