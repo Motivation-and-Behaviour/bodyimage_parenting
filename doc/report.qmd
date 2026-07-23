@@ -111,6 +111,56 @@ tar_read(body_dissatisfaction_plot, store = store)
 - The pattern is consistent across the B and K cohorts at matched ages.
 :::
 
+# Analysis sample
+
+```{r sample-flow}
+sample_flow <- tar_read(sample_flow_table, store = store)
+analysis_n <- sample_flow$flow$`N children`[3]
+regression_n <- sample_flow$flow$`N children`[5]
+sensitivity_n <- sample_flow$flow$`N children`[6]
+```
+
+The trajectory analyses use children with a CBIS body dissatisfaction score at
+two or more of the three ages (N = `r format(analysis_n, big.mark = ",")`).
+The primary class-membership regressions additionally require complete baseline
+(age 8) covariates — sex, SES, BMI z-score, and Parent 1 warmth and anger
+(N = `r format(regression_n, big.mark = ",")`). A sensitivity model adding
+Parent 2 warmth and anger uses the subset with second-carer data
+(N = `r format(sensitivity_n, big.mark = ",")`).
+
+```{r tbl-sample-flow}
+knitr::kable(
+  sample_flow$flow,
+  caption = "Sample flow from the cleaned data to the analysis samples."
+)
+```
+
+```{r tbl-baseline-missingness}
+knitr::kable(
+  sample_flow$baseline_missingness,
+  caption = "Baseline (age 8) covariate missingness in the trajectory sample."
+)
+```
+
+::: {.callout-note title="Interpretation"}
+- Attrition on the outcome is modest: 91% of children contribute at least two
+  CBIS waves, and 75% contribute all three, so the trajectory sample retains
+  most of the cohort.
+- Parent 2 warmth/anger are missing for ~38% of the trajectory sample —
+  largely single-parent households or no second-carer questionnaire — while
+  every other covariate is missing for under 9%. Requiring Parent 2 scores
+  would cost ~2,300 children.
+- **Decision (2026-07-23):** the primary regressions therefore use Parent 1
+  parenting only, keeping the larger sample; the both-parent model (all four
+  parenting variables jointly, as in the original proposal) becomes a
+  sensitivity analysis on the subset with second-carer data. Note the
+  sensitivity subset is also selectively two-parent households, so any
+  differences may reflect the sample as much as mutual adjustment.
+- The 129 children "missing" sex are those with no age-8 record at all (their
+  baselines are taken from the age-8 wave); they are excluded from the
+  regressions anyway by their other missing baselines.
+:::
+
 # Results
 
 *Placeholder*

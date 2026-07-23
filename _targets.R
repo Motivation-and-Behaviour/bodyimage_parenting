@@ -55,5 +55,7 @@ list(
     body_dissatisfaction_plot,
     plot_body_dissatisfaction(df_clean)
   ),
+  tar_target(df_model, make_model_data(df_clean), format = "qs"),
+  tar_target(sample_flow_table, summarise_sample_flow(df_clean, df_model)),
   tar_quarto(report, "doc/report.qmd")
 )
