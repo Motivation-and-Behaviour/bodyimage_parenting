@@ -3,7 +3,7 @@
   "image": "ghcr.io/tarensanders/r-base:latest",
   "features": {
     "ghcr.io/rocker-org/devcontainer-features/r-packages:1": {
-      "packages": "tableone, labelled",
+      "packages": "tableone, labelled, quarto",
       "installSystemRequirements": true
     }
   },
