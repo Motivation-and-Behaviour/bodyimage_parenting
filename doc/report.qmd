@@ -161,6 +161,203 @@ knitr::kable(
   regressions anyway by their other missing baselines.
 :::
 
+# Trajectory class enumeration
+
+```{r lcga-fit-stats}
+lcga_stats <- tar_read(lcga_fit_stats, store = store)
+lcga_display <- lcga_stats |>
+  dplyr::transmute(
+    K = k,
+    Converged = ifelse(converged, "Yes", "No"),
+    `Log-likelihood` = sprintf("%.1f", loglik),
+    Parameters = npm,
+    AIC = sprintf("%.0f", AIC),
+    BIC = sprintf("%.0f", BIC),
+    SABIC = sprintf("%.0f", SABIC),
+    Entropy = ifelse(is.na(entropy), "—", sprintf("%.2f", entropy)),
+    `Class % (largest → smallest)` = class_props
+  )
+```
+
+Latent class growth analyses (linear class trajectories, no within-class
+random effects, equal residual variance across classes) were fit for K = 1–5
+classes with `lcmm::hlme()`, each multi-class model from 50 random starts
+(gridsearch initialised from the one-class model).
+
+```{r tbl-lcga-fit}
+knitr::kable(
+  lcga_display,
+  caption = "Fit statistics for K = 1-5 latent class growth models of body dissatisfaction.",
+  align = c("l", rep("r", ncol(lcga_display) - 1))
+)
+```
+
+```{r plot-lcga-trajectories, fig.cap="Predicted class trajectories (95% bands) by number of classes. Dashed line: observed overall means.", fig.width=10, fig.height=3.5}
+tar_read(lcga_trajectory_plot, store = store)
+```
+
+::: {.callout-note title="Interpretation"}
+- All five models converged. As anticipated at this sample size (N = 7,843),
+  AIC/BIC/SABIC fall monotonically through K = 5, so information criteria
+  alone cannot settle enumeration — entropy, class sizes, and
+  interpretability carry more weight.
+- **Entropy peaks at K = 3 (0.85)** and drops to ~0.81 at K = 4–5. All values
+  from K = 3 up clear the ≥0.8 bar for the proportional-weighting three-step
+  approach (Step 4 decision point).
+- The K = 3 solution is highly interpretable: a satisfied majority tracking
+  close to zero discrepancy (~84%), a "larger than ideal" class starting high
+  and declining (~13.5%), and a small "thinner than ideal" class converging
+  toward zero (~2.8%, ≈ 220 children).
+- K = 4 splits the "larger than ideal" group into a moderate-stable class
+  (~23%) and a small extreme-declining class (~2.7%), at the cost of lower
+  entropy; K = 5 adds a 1.6% class with a steep crossing trajectory that looks
+  like a fringe pattern rather than a substantive group.
+- Classes below the 5% flag appear from K = 3 onward, but the 2.8% class at
+  K = 3 maps directly onto the "thinner than ideal" group visible in the
+  descriptives, which argues for keeping it.
+- **Tentative recommendation: K = 3** (best entropy, cleanly interpretable,
+  classes matching the descriptive patterns), with K = 4 the main alternative
+  if the moderate/extreme split among dissatisfied children is of substantive
+  interest. **Decision on K is yours** — it is set in one place
+  (`lcga_k_chosen` in `_targets.R`) at Step 3b.
+:::
+
+## Sex-stratified enumeration check
+
+The descriptive statistics showed sex-linked patterns in the level and
+direction of body dissatisfaction, raising the question of whether trajectory
+classes should be sex-stratified. As a diagnostic, the same K = 1–5
+enumeration was repeated separately for boys and girls. If the stratified
+class *shapes* mirror the pooled solution, sex differences are a matter of
+class *prevalence* — handled by sex in the class-membership model and the
+planned sex-moderation tests — and the pooled LCGA stands as the primary
+specification.
+
+```{r lcga-strat-stats}
+lcga_strat_stats <- tar_read(lcga_strat_fit_stats, store = store)
+strat_display <- dplyr::bind_rows(lcga_stats, lcga_strat_stats) |>
+  dplyr::arrange(sample, k) |>
+  dplyr::transmute(
+    Sample = tools::toTitleCase(sample),
+    K = k,
+    Converged = ifelse(converged, "Yes", "No"),
+    BIC = sprintf("%.0f", BIC),
+    SABIC = sprintf("%.0f", SABIC),
+    Entropy = ifelse(is.na(entropy), "—", sprintf("%.2f", entropy)),
+    `Class % (largest → smallest)` = class_props
+  )
+```
+
+```{r tbl-lcga-strat}
+knitr::kable(
+  strat_display,
+  caption = "Class enumeration in the pooled sample and stratified by sex.",
+  align = c("l", rep("r", ncol(strat_display) - 1))
+)
+```
+
+```{r plot-lcga-sex-comparison, fig.cap="Predicted class trajectories by sample (pooled, boys, girls) and number of classes. Dashed lines: observed means within each sample.", fig.width=10, fig.height=8}
+tar_read(lcga_sex_comparison_plot, store = store)
+```
+
+::: {.callout-note title="Interpretation"}
+- All stratified models converged, and enumeration behaves the same way
+  within each sex as in the pooled sample: BIC falls monotonically, entropy
+  peaks at K = 3 (0.85 in boys, girls, and pooled alike).
+- **At K = 3 the class shapes replicate almost exactly in both sexes**: a
+  flat satisfied majority (~84% in both), a declining "larger than ideal"
+  class (boys 12.6%, girls 14.3%), and a rising "thinner than ideal" class
+  (boys 3.5%, girls 2.0%). The sexes differ in class *prevalence* — the
+  thinner-than-ideal class is nearly twice as common in boys — not in class
+  *shape*. Prevalence differences are exactly what the class-membership
+  model with sex handles.
+- The girls' age-12 rebound in "larger than ideal" seen in the descriptives
+  surfaces only at K = 4, and only as a slope difference: girls' moderate
+  dissatisfied class drifts slightly upward from 10 to 12 while the boys'
+  equivalent drifts down. It is a modest divergence within one class, not a
+  distinct trajectory structure, and no rising-positive class exists in the
+  girls-only solutions at K = 3.
+- **Conclusion: the pooled LCGA stands as the primary specification.** This
+  supports K = 3 specifically — its structure is reproducible within each
+  sex, whereas the K = 4 structures start to diverge across sexes. If the
+  moderate-class slope difference matters substantively, it is better
+  captured by the planned sex-moderation analysis than by stratified
+  classes.
+:::
+
+::: {.callout-important title="Enumeration criteria & limitations"}
+- Class enumeration rests on BIC/SABIC, entropy, smallest-class size (flag
+  <5%), and interpretability. `lcmm` provides no LMR-LRT or BLRT (Nylund et
+  al., 2007); a manual bootstrap LRT is a possible add-on if the picture is
+  ambiguous.
+- At this sample size BIC can keep falling as classes are added — where it
+  does, we lean on entropy, class sizes, and interpretability.
+- Never accept a solution with `Converged = No`.
+- Linear class trajectories only: three timepoints saturate a quadratic.
+- Reporting follows the GRoLTS checklist (van de Schoot et al., 2017).
+:::
+
+# Trajectory classes (final model)
+
+```{r final-classes}
+class_assignments <- tar_read(class_assignments, store = store)
+class_quality <- class_assignments |>
+  dplyr::count(class, name = "N") |>
+  dplyr::left_join(
+    class_assignments |>
+      dplyr::group_by(class) |>
+      dplyr::summarise(
+        mean_pp = mean(modal_pprob),
+        min_pp = min(modal_pprob)
+      ),
+    by = "class"
+  ) |>
+  dplyr::transmute(
+    Class = class,
+    N,
+    `%` = sprintf("%.1f", 100 * N / sum(N)),
+    `Mean posterior prob.` = sprintf("%.2f", mean_pp),
+    `Min posterior prob.` = sprintf("%.2f", min_pp)
+  )
+```
+
+The three-class model was frozen as the final trajectory model (K = 3;
+entropy 0.85), based on the enumeration statistics and the sex-stratified
+check above. Classes are labelled in ascending order of their age-8
+intercept, so numbering is stable across refits.
+
+```{r plot-lcga-classes, fig.cap="Final three-class model: predicted trajectories (95% bands) and observed means by modal class.", fig.width=7, fig.height=4.5}
+tar_read(lcga_class_plot, store = store)
+```
+
+```{r tbl-class-quality}
+knitr::kable(
+  class_quality,
+  caption = "Class sizes and modal-assignment quality (posterior probabilities of the assigned class).",
+  align = c("l", rep("r", 4))
+)
+```
+
+::: {.callout-note title="Interpretation"}
+- **Class 1 — "thinner than ideal, converging" (2.8%, n = 218):** starts
+  around −1.7 at age 8 and rises toward −0.4 by 12; these children see
+  themselves as thinner than their ideal, with the gap closing over time.
+- **Class 2 — "satisfied" (83.8%, n = 6,570):** flat trajectory just above
+  zero across ages 8–12.
+- **Class 3 — "larger than ideal, declining" (13.5%, n = 1,055):** starts
+  around 1.7 and declines modestly to about 1.3; persistent dissatisfaction
+  in the "feels larger than ideal" direction.
+- Classification quality is good: mean posterior probabilities of the
+  assigned class are 0.81 / 0.94 / 0.90 (all above the 0.70 rule of thumb),
+  consistent with entropy of 0.85. Observed class means track the model
+  predictions closely, with mild shrinkage at the age-8 extremes.
+- Entropy ≥ 0.8 settles the Step 4 decision point: the three-step membership
+  models will use **proportional posterior weighting**, with a
+  modal-assignment sensitivity check.
+- Class names above are working labels — happy to change them to whatever
+  you want used in the manuscript.
+:::
+
 # Results
 
 *Placeholder*
