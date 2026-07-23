@@ -9,7 +9,8 @@ tar_option_set(
     "tableone",
     "janitor",
     "stringr",
-    "glue"
+    "glue",
+    "ggplot2"
   ),
   controller = crew::crew_controller_local(
     workers = min(parallel::detectCores() - 2, 20),
@@ -31,7 +32,6 @@ lsac_path <- "/data/2 LSAC 10 General Release/Survey Data/SPSS"
 input_files <- file.path(lsac_path, lsac_files)
 
 
-# Replace these example targets with your own analysis steps
 list(
   tar_files_input(waves, input_files),
   tar_target(
@@ -44,5 +44,10 @@ list(
   tar_target(waves_joined, dplyr::bind_rows(waves_data), format = "qs"),
   tar_target(df_tidy, tidy_data(waves_joined), format = "qs"),
   tar_target(df_clean, clean_data(df_tidy), format = "qs"),
-  tar_target(descriptives_table, make_descriptives_table(df_clean))
+  tar_target(descriptives_table, make_descriptives_table(df_clean)),
+  tar_target(
+    body_dissatisfaction_plot,
+    plot_body_dissatisfaction(df_clean)
+  ),
+  tar_quarto(report, "doc/report.qmd")
 )

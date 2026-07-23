@@ -1,0 +1,98 @@
+---
+title: "Body Image Trajectories and Parenting — Working Notes"
+subtitle: "Analysis notes"
+author: "Taren Sanders"
+date: today
+format:
+  docx:
+    toc: true
+    number-sections: true
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r setup}
+library(targets)
+library(ggplot2)
+library(knitr)
+
+# Quarto renders from the document's directory, so point tar_read() at the
+# project-root store explicitly.
+store <- here::here("_targets")
+```
+
+# Sample overview
+
+```{r overview}
+df <- tar_read(df_clean, store = store)
+n_obs <- nrow(df)
+n_children <- dplyr::n_distinct(df$id)
+cohorts <- paste(sort(unique(df$cohort)), collapse = " and ")
+ages <- paste(sort(unique(df$age_cat)), collapse = ", ")
+```
+
+The analysis dataset contains `r format(n_obs, big.mark = ",")` observations
+from `r format(n_children, big.mark = ",")` children across the `r cohorts`
+cohorts, measured at ages `r ages`.
+
+::: {.callout-note title="Interpretation"}
+- Two cohorts (B and K) are pooled on a common **age** axis (8/10/12).
+- Cell sizes are large at every age, so age-stratified estimates are stable.
+:::
+
+# Descriptive statistics
+
+```{r descriptives}
+descriptives <- tar_read(descriptives_table, store = store)
+```
+
+## By cohort within age group
+
+```{r tbl-by-cohort-age}
+knitr::kable(
+  descriptives$by_cohort_age,
+  caption = "Descriptive statistics by cohort within age group."
+)
+```
+
+::: {.callout-note title="Interpretation"}
+- B and K cohorts look very similar at matched ages.
+- Suggests that it is reasonable to pool the cohorts for the main analysis.
+:::
+
+## By age group
+
+```{r tbl-by-age}
+knitr::kable(
+  descriptives$by_age,
+  caption = "Descriptive statistics by age group (cohorts pooled)."
+)
+```
+
+
+
+::: {.callout-note title="Interpretation"}
+- All the means look about what you would expect, and the standard deviations are reasonable.
+- The dissatisfaction also looks broadly like you would expect: most children either pick an ideal the same as their current, or a smaller one, with a smaller share picking a larger ideal.
+- Body dissatisfaction actually seems to fall slightly with age, counter to what I would have expected (might need to check if this has anything to do with non-response bias?)
+- BMI rises with age as expected, but the z-score is consistent. 
+- Parental warmth drifts down (but barely) and parental anger is broadly flat across age.
+- Parent 1 is clearly the mother in most cases, and parent 2 is the father in most cases, given the match of means.
+:::
+
+# Preliminary plots
+
+```{r plot-body-dissat, fig.cap="Body dissatisfaction category proportions by age and cohort.", fig.width=7, fig.height=4}
+tar_read(body_dissatisfaction_plot, store = store)
+```
+
+::: {.callout-note title="Interpretation"}
+- "Larger than ideal" is the dominant form of dissatisfaction at every age.
+- The pattern is consistent across the B and K cohorts at matched ages.
+:::
+
+# Results
+
+*Placeholder*
