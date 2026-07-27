@@ -24,9 +24,18 @@ plot_lcga_sex_comparison <- function(
   require(ggplot2)
 
   fit_sets <- list(
-    Pooled = lcga_fits,
-    Boys = lcga_strat_fits[grepl("boys", names(lcga_strat_fits))],
-    Girls = lcga_strat_fits[grepl("girls", names(lcga_strat_fits))]
+    Pooled = lcga_fits[grepl(
+      paste0("_", outcome, "_\\d+$"),
+      names(lcga_fits)
+    )],
+    Boys = lcga_strat_fits[grepl(
+      paste0("_", outcome, "_boys_\\d+$"),
+      names(lcga_strat_fits)
+    )],
+    Girls = lcga_strat_fits[grepl(
+      paste0("_", outcome, "_girls_\\d+$"),
+      names(lcga_strat_fits)
+    )]
   )
   data_sets <- list(
     Pooled = df_model,

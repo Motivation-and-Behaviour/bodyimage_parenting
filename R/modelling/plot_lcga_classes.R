@@ -9,6 +9,7 @@
 #' @param class_assignments Output of `extract_class_assignments()`.
 #' @param df_model Modelling data from `make_model_data()`.
 #' @param outcome Outcome column name.
+#' @param ylab Y-axis label.
 #' @return A ggplot object.
 #' @author Taren Sanders
 #' @export
@@ -16,7 +17,8 @@ plot_lcga_classes <- function(
   lcga_final,
   class_assignments,
   df_model,
-  outcome = "body_discrepancy"
+  outcome = "body_discrepancy",
+  ylab = "Body dissatisfaction (perceived − ideal)"
 ) {
   require(dplyr)
   require(ggplot2)
@@ -67,7 +69,7 @@ plot_lcga_classes <- function(
     ) +
     labs(
       x = "Age (years)",
-      y = "Body dissatisfaction (perceived − ideal)",
+      y = ylab,
       colour = "Class",
       fill = "Class",
       caption = paste(

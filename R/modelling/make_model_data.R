@@ -23,7 +23,7 @@ make_model_data <- function(df_clean) {
     "parenting_angry_p2_z"
   )
 
-  # Baseline covariates come from the age-8 row even when the CBIS items are
+  # Baseline covariates come from the age-8 row even when the PBI items are
   # missing there, since the covariates were still measured at that wave.
   df_baseline <- df_clean |>
     dplyr::filter(age_cat == 8) |>

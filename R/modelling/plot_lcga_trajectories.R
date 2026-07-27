@@ -57,20 +57,24 @@ lcga_predictions <- function(fits) {
 #' per class, faceted by number of classes, with the observed overall means
 #' overlaid for reference.
 #'
-#' @param fits Named list of `hlme` fits (one per K).
+#' @param fits Named list of `hlme` fits (one per K); fits for other outcomes
+#'   are dropped by matching `outcome` against the target names.
 #' @param df_model Modelling data from `make_model_data()`.
 #' @param outcome Outcome column name.
+#' @param ylab Y-axis label.
 #' @return A ggplot object.
 #' @author Taren Sanders
 #' @export
 plot_lcga_trajectories <- function(
   fits,
   df_model,
-  outcome = "body_discrepancy"
+  outcome = "body_discrepancy",
+  ylab = "Body dissatisfaction (perceived − ideal)"
 ) {
   require(dplyr)
   require(ggplot2)
 
+  fits <- fits[grepl(paste0("_", outcome, "_\\d+$"), names(fits))]
   preds_wide <- lcga_predictions(fits)
 
   obs_means <- df_model |>
@@ -115,7 +119,7 @@ plot_lcga_trajectories <- function(
     ) +
     labs(
       x = "Age (years)",
-      y = "Body dissatisfaction (perceived − ideal)",
+      y = ylab,
       colour = "Class",
       fill = "Class",
       caption = "Dashed line: observed overall means."

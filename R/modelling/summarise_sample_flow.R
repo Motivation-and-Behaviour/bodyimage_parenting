@@ -1,6 +1,6 @@
 #' Summarise the flow from the cleaned data to the analysis samples
 #'
-#' Counts children at each inclusion stage (any CBIS wave, the >= 2 wave
+#' Counts children at each inclusion stage (any PBI wave, the >= 2 wave
 #' trajectory sample, all three waves, complete baseline covariates) and
 #' tabulates baseline covariate missingness within the trajectory sample.
 #'
@@ -23,7 +23,7 @@ summarise_sample_flow <- function(df_clean, df_model) {
   )
   baseline_vars <- names(baseline_labels)
 
-  cbis_waves_per_child <- df_clean |>
+  pbi_waves_per_child <- df_clean |>
     dplyr::filter(!is.na(body_discrepancy)) |>
     dplyr::count(id, name = "n_waves")
 
@@ -48,17 +48,17 @@ summarise_sample_flow <- function(df_clean, df_model) {
   flow <- tibble::tibble(
     Stage = c(
       "Children in cleaned data",
-      "≥ 1 wave with a CBIS score",
-      "≥ 2 waves with a CBIS score (trajectory sample)",
-      "All 3 waves with a CBIS score",
+      "≥ 1 wave with a PBI score",
+      "≥ 2 waves with a PBI score (trajectory sample)",
+      "All 3 waves with a PBI score",
       "Complete baseline covariates, Parent 1 model (regression sample)",
       "Complete baseline covariates incl. Parent 2 (sensitivity sample)"
     ),
     `N children` = c(
       n_total,
-      nrow(cbis_waves_per_child),
-      sum(cbis_waves_per_child$n_waves >= 2),
-      sum(cbis_waves_per_child$n_waves >= 3),
+      nrow(pbi_waves_per_child),
+      sum(pbi_waves_per_child$n_waves >= 2),
+      sum(pbi_waves_per_child$n_waves >= 3),
       n_regression,
       n_sensitivity
     )
