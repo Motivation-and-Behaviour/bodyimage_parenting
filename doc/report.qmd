@@ -1,0 +1,477 @@
+---
+title: "Body Image Trajectories and Parenting"
+subtitle: "Analysis report"
+author: "Taren Sanders"
+date: today
+format:
+  docx:
+    toc: true
+    number-sections: true
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r setup}
+library(targets)
+library(ggplot2)
+library(knitr)
+
+# Quarto renders from the document's directory, so point tar_read() at the
+# project-root store explicitly.
+store <- here::here("_targets")
+```
+
+# Methods
+
+- Body dissatisfaction scored as `perceived - ideal`. I also made a version which is binary (any form of body dissatisfaction, no measure of magnitude) as a sanity check
+- Fit latent class growth analysis for 1-5 classes. Tested sex-stratified classes too.
+- Used regression to see if the parenting variables predicted which class children were in. Includes a moderation by child sex.
+- Main analysis is just the parent 1 varibles because of the significant loss of sample size. The sensitivity analysis includes both parents data.
+
+# Main results
+
+## Analysis sample
+
+```{r sample-flow}
+sample_flow <- tar_read(sample_flow_table, store = store)
+analysis_n <- sample_flow$flow$`N children`[3]
+regression_n <- sample_flow$flow$`N children`[5]
+sensitivity_n <- sample_flow$flow$`N children`[6]
+```
+
+Body dissatisfaction was scored as the Pictorial Body Image (PBI) perceived − ideal figure discrepancy at ages 8, 10, and 12 (B and K cohorts pooled by age).
+The trajectory analyses use children with scores at two or more ages (N = `r format(analysis_n, big.mark = ",")`); the regressions additionally require complete baseline (age 8) covariates — sex, SES, BMI z-score, and Parent 1 warmth and anger (N = `r format(regression_n, big.mark = ",")`).
+Parent 2 parenting is missing for ~38% of the sample (mostly no second-carer questionnaire), so the primary models use Parent 1 only, with a both-parent sensitivity model on the subset with second-carer data (N = `r format(sensitivity_n, big.mark = ",")`; @sec-supp-sensitivity).
+
+```{r tbl-sample-flow}
+knitr::kable(
+  sample_flow$flow,
+  caption = "Sample flow from the cleaned data to the analysis samples."
+)
+```
+
+## Descriptive statistics
+
+```{r descriptives}
+descriptives <- tar_read(descriptives_table, store = store)
+knitr::kable(
+  descriptives$by_age,
+  caption = "Descriptive statistics by age group (cohorts pooled)."
+)
+```
+
+::: {.callout-note title="Interpretation"}
+- Just under half of children pick an ideal figure different from their
+  current figure at every age, most often a thinner one.
+- Cohorts look near-identical at matched ages (@sec-supp-descriptives),
+  supporting pooling; sex-specific patterns are also shown there.
+:::
+
+## Trajectory classes
+
+Latent class growth analysis (LCGA — a model that sorts children into a small number of groups, each sharing an average trajectory) was fit with
+`lcmm::hlme()` for 1–5 classes, each from 50 random starts. LCGA (no within-class random effects) was used rather than a latent growth mixture model because three timepoints with linear class trajectories cannot reliably identify within-class random slopes or growth-mixture variance components. Full enumeration statistics (including the number of final iterations each model took to converge) are in @sec-supp-enumeration; the three-class model was chosen on entropy (a 0–1 index of how cleanly children are classified into classes; higher is better, ≥0.8 is the rule of thumb for good allocation), class sizes, and interpretability. Entropy peaked at K = 3 (0.85), and a sex-stratified check (@sec-supp-stratified) showed the same three classes in boys and girls so I left them as pooled (the moderation analysis still tests for sex differences).
+
+```{r plot-lcga-classes, fig.cap="Final three-class model: predicted trajectories (95% bands) and observed means by modal class.", fig.width=7, fig.height=4.5}
+tar_read(lcga_class_plot, store = store)
+```
+
+```{r final-classes}
+class_assignments <- tar_read(class_assignments, store = store)
+class_quality <- class_assignments |>
+  dplyr::count(class, name = "N") |>
+  dplyr::left_join(
+    class_assignments |>
+      dplyr::group_by(class) |>
+      dplyr::summarise(
+        mean_pp = mean(modal_pprob),
+        min_pp = min(modal_pprob)
+      ),
+    by = "class"
+  ) |>
+  dplyr::transmute(
+    Class = class,
+    N,
+    `%` = sprintf("%.1f", 100 * N / sum(N)),
+    `Mean posterior prob.` = sprintf("%.2f", mean_pp),
+    `Min posterior prob.` = sprintf("%.2f", min_pp)
+  )
+knitr::kable(
+  class_quality,
+  caption = "Class sizes and classification quality (posterior probability = the model's estimated probability that a child belongs to their assigned class).",
+  align = c("l", rep("r", 4))
+)
+```
+
+::: {.callout-note title="Interpretation"}
+- **Class 1 — "thinner than ideal, converging" (2.8%):** starts ~−1.7 at age 8, closing to ~−0.4 by 12. **Class 2 — "satisfied" (83.8%):** flat, near zero. **Class 3 — "larger than ideal, declining" (13.5%):** starts ~1.7, easing to ~1.3 — persistent dissatisfaction.
+- Even though Class 3 is declining, they still finish (on average) more than one full image different than their ideal. So while they are improving, it's worth noting that it's probably best classified as consistently dissatisfied.
+- Mean posterior probabilities (the probability that a child belongs to each trajectory class, given their observed scores) are all above the 0.70 rule of thumb; class names are working labels.
+:::
+
+## Who is in each class?
+
+```{r class-descriptives}
+knitr::kable(
+  tar_read(class_descriptives_table, store = store),
+  caption = "Baseline (age 8) characteristics by modal trajectory class. Children without an age-8 record are not shown."
+)
+```
+
+::: {.callout-note title="Interpretation"}
+- Strong face validity, differing most sharply on BMI z-score: −0.68 (thinner than ideal) vs +0.26 (satisfied) vs +1.29 (larger than ideal). In other words, those in Class 3 have much higher BMIs than those in Class 1.
+- Class 3 is lower-SES and slightly majority-female; Class 1 is two-thirds male.
+:::
+
+## Parenting and trajectory class membership
+
+```{r parenting-model}
+parenting_model <- tar_read(parenting_model, store = store)
+```
+
+I used the standard approach for the regressions.
+Class membership was regressed on baseline parenting and covariates using a three-step approach (the trajectory model is fit first, then class membership is predicted in a separate regression): each child contributes one row per class, weighted by their posterior membership probabilities, which carries classification uncertainty into the regression. Models used the satisfied class as reference; confidence intervals come from a cluster bootstrap (refitting the model in 500 resamples drawn child-by-child).
+N = `r format(parenting_model$n_children, big.mark = ",")`.
+
+```{r tbl-parenting-model}
+knitr::kable(
+  tar_read(parenting_model_table, store = store),
+  caption = "Primary model: relative risk ratios (RRR — the multiplicative change in the relative chance of being in a class vs the satisfied class, per SD of the predictor) with 95% bootstrap CIs."
+)
+```
+
+::: {.callout-note title="Interpretation"}
+- **Warmth: no association** with class membership (RRRs ≈ 1.00) — H2 not supported.
+- **Anger predicts both dissatisfied classes**: per SD, RRR 1.16 (1.09–1.23) for larger-than-ideal and 1.13 (1.00–1.27) for thinner-than-ideal. Modest effects, in either direction of dissatisfaction.
+- Covariates are much stronger — BMI z dominates (RRR 3.91 / 0.39 per SD).
+- Sensitivity models (modal assignment; both parents) all agree (@sec-supp-sensitivity), so can be reasonably sure about the results.
+:::
+
+## Sex moderation
+
+```{r moderation-test}
+knitr::kable(
+  tar_read(moderation_test, store = store) |>
+    dplyr::mutate(dplyr::across(dplyr::where(is.numeric), ~ round(.x, 3))),
+  caption = "Joint tests of the sex × parenting interaction block (4 parameters)."
+)
+```
+
+::: {.callout-note title="Interpretation"}
+- **No sex moderation** (H3): LR p = .81, bootstrap Wald p = .69; all interaction RRRs near 1. Full model and plot in @sec-supp-moderation.
+- In other words - the there doesn't seem to be a lot of difference for boys and girls in terms of the effect that parenting has.
+:::
+
+## Secondary analysis: growth models
+
+```{r growth}
+growth_model <- tar_read(growth_model, store = store)
+growth_lrt <- tar_read(growth_moderation_lrt, store = store)
+```
+
+Because three timepoints separate classes mainly on level (the slopes are pretty small), multilevel linear growth models (regressions allowing each child their own starting
+level and rate of change) complement the class analysis by estimating associations of baseline parenting with the level (age 8) and change (per year) of dissatisfaction.
+Same sample as the primary regressions, for both the signed score and its absolute value.
+We can report this as a supplementary analysis - it shows if our results are robust to the methods we chose.
+
+```{r tbl-growth}
+knitr::kable(
+  tar_read(growth_model_table, store = store),
+  caption = "Growth model of signed body dissatisfaction (perceived − ideal). Parenting main effects = level at age 8; × time terms = change per year."
+)
+knitr::kable(
+  tar_read(growth_model_abs_table, store = store),
+  caption = "Growth model of absolute body dissatisfaction |perceived − ideal|."
+)
+```
+
+```{r plot-growth-pred, fig.cap="Predicted trajectories at ±1 SD of baseline parenting, by sex (other covariates at 0).", fig.width=8, fig.height=4}
+tar_read(growth_predictions_plot, store = store)
+```
+
+::: {.callout-note title="Interpretation"}
+- Agrees with the class analysis: **anger, not warmth, and on level, not slope.** 
+- +0.035 (signed) and +0.055 (absolute) units per SD of anger at age 8; the only slope term is a slight narrowing of the anger gap in the absolute model (−0.010/yr).
+- Effects are small (BMI z: +0.42 per SD, for comparison)
+- No sex moderation (LR χ² = `r sprintf("%.2f", growth_lrt$statistic)`, p = `r sprintf("%.2f", growth_lrt$p)`).
+:::
+
+# Supplementary material
+
+## Additional descriptive statistics {#sec-supp-descriptives}
+
+```{r tbl-by-cohort-age}
+knitr::kable(
+  descriptives$by_cohort_age,
+  caption = "Descriptive statistics by cohort within age group."
+)
+```
+
+```{r tbl-by-sex-age}
+knitr::kable(
+  descriptives$by_sex_age,
+  caption = "Descriptive statistics by sex within age group (cohorts pooled)."
+)
+```
+
+```{r plot-body-dissat, fig.cap="Body dissatisfaction category proportions by age and cohort.", fig.width=7, fig.height=4}
+tar_read(body_dissatisfaction_plot, store = store)
+```
+
+::: {.callout-note title="Interpretation"}
+- B and K cohorts are near-identical at matched ages, supporting pooling.
+- The decline in dissatisfaction with age is mostly a boys' pattern; girls
+  rebound at 12, driven by "larger than ideal" — motivating the
+  sex-stratified enumeration check and sex-moderation tests.
+:::
+
+### Distribution of the outcome within classes
+
+`lcmm::hlme()` assumes the outcome is normal within each class.
+The histograms show the distribution of scores by age within each trajectory class, and the table gives skewness and kurtosis (0 would mean normal).
+
+```{r plot-outcome-distribution, fig.cap="Distribution of body dissatisfaction by age within each latent class.", fig.width=9, fig.height=6}
+tar_read(outcome_distribution_plot, store = store)
+```
+
+```{r tbl-outcome-normality}
+knitr::kable(
+  tar_read(outcome_normality_table, store = store) |>
+    dplyr::transmute(
+      Grouping = grouping,
+      Group = group,
+      N = n,
+      Mean = sprintf("%.2f", mean),
+      SD = sprintf("%.2f", sd),
+      Skewness = sprintf("%.2f", skewness),
+      `Excess kurtosis` = sprintf("%.2f", excess_kurtosis)
+    ),
+  caption = "Skewness and excess kurtosis of body dissatisfaction by wave and by latent class.",
+  align = c("l", "l", rep("r", 5))
+)
+```
+
+::: {.callout-note title="Interpretation"}
+- There is a small amount of skewness (especially the "thinner than ideal class), probably because the outcome is discrete and bounded. So the assumption is approximate rather than exact.
+- The sensitivity analyse all give the same result, (especially the absolute-discrepenacy analysis) which suggests that the minor non-normality
+  doesn't change what we conclude.
+:::
+
+## Missingness and attrition {#sec-supp-missingness}
+
+```{r tbl-baseline-missingness}
+knitr::kable(
+  sample_flow$baseline_missingness,
+  caption = "Baseline (age 8) covariate missingness in the trajectory sample."
+)
+```
+
+::: {.callout-note title="Interpretation"}
+- Parent 2 warmth/anger missing for ~38% (largely single-parent households);
+  all other covariates under 9% — the basis for the Parent-1-primary
+  decision.
+:::
+
+To see if any baseline characteristics are related to attrition, the tables below compare children by how many waves of the outcome they contributed. Don't just look at the p-value (the sample size inflates significance here). The standardized mean difference (SMD) is helpful to know if it is actually a big difference (SMD ≳ 0.1 is normally considered a non-trivial difference).
+
+```{r tbl-attrition-inclusion}
+attrition <- tar_read(attrition_table, store = store)
+knitr::kable(
+  attrition$by_inclusion,
+  caption = "Baseline (age 8) characteristics of children included in vs excluded from the trajectory sample (< 2 vs ≥ 2 waves)."
+)
+```
+
+```{r tbl-attrition-waves}
+knitr::kable(
+  attrition$by_waves,
+  caption = "Baseline (age 8) characteristics by number of observed waves."
+)
+```
+
+::: {.callout-note title="Interpretation"}
+- The SMDs are all pretty small, so attrition looks close to missing-at-random.
+- There is a small effect of socioeconomic position (which is pretty normal in longitudinal studies - lower SES families tend to dropout first), and maybe an effect of BMI (but, I'd say that is just because higher SES tends to mean higher BMI). I would probably report this, but say that the effect is small enough that it is unlikely to bias the results and so we went with MAR. 
+:::
+
+## Trajectory class enumeration {#sec-supp-enumeration}
+
+```{r lcga-fit-stats}
+lcga_stats <- tar_read(lcga_fit_stats, store = store) |>
+  dplyr::filter(outcome == "body_discrepancy")
+lcga_display <- lcga_stats |>
+  dplyr::transmute(
+    K = k,
+    Converged = ifelse(converged, "Yes", "No"),
+    Iterations = niter,
+    `Log-likelihood` = sprintf("%.1f", loglik),
+    Parameters = npm,
+    AIC = sprintf("%.0f", AIC),
+    BIC = sprintf("%.0f", BIC),
+    SABIC = sprintf("%.0f", SABIC),
+    Entropy = ifelse(is.na(entropy), "—", sprintf("%.2f", entropy)),
+    `Class % (largest → smallest)` = class_props
+  )
+knitr::kable(
+  lcga_display,
+  caption = "Fit statistics for K = 1-5 latent class growth models of body dissatisfaction. BIC/SABIC are fit indices penalised for model complexity (lower is better).",
+  align = c("l", rep("r", ncol(lcga_display) - 1))
+)
+```
+
+```{r plot-lcga-trajectories, fig.cap="Predicted class trajectories (95% bands) by number of classes. Dashed line: observed overall means.", fig.width=10, fig.height=3.5}
+tar_read(lcga_trajectory_plot, store = store)
+```
+
+::: {.callout-note title="Interpretation"}
+- All models converged. AIC/BIC/SABIC fall through K = 5, as
+  expected at this N, so enumeration leans on entropy (peak 0.85 at K = 3),
+  class sizes, and interpretability.
+- The Iterations column reports the iterations of the final convergence refit. Because that refit starts from the best of the 50 random starts (based on the first model), the multi-class models finish in a single additional iteration.
+- K = 4–5 split off small (<3%) fragments at the cost of entropy; the 2.8%
+  class at K = 3 maps onto the "thinner than ideal" group in the
+  descriptives, arguing for keeping it.
+- When reporting, it's worth knowing that I followed the usual BIC + entropy + size + interpretability approach (GRoLTS-consistent).
+- I only tested linear trajectories (three timepoints not enough to try quadratics).
+:::
+
+## Sex-stratified enumeration check {#sec-supp-stratified}
+
+The same K = 1–5 enumeration repeated separately by sex, to check whether the pooled classes are robust.
+
+```{r lcga-strat-stats}
+lcga_strat_stats <- tar_read(lcga_strat_fit_stats, store = store)
+strat_display <- dplyr::bind_rows(lcga_stats, lcga_strat_stats) |>
+  dplyr::arrange(sample, k) |>
+  dplyr::transmute(
+    Sample = tools::toTitleCase(sample),
+    K = k,
+    Converged = ifelse(converged, "Yes", "No"),
+    BIC = sprintf("%.0f", BIC),
+    SABIC = sprintf("%.0f", SABIC),
+    Entropy = ifelse(is.na(entropy), "—", sprintf("%.2f", entropy)),
+    `Class % (largest → smallest)` = class_props
+  )
+knitr::kable(
+  strat_display,
+  caption = "Class enumeration in the pooled sample and stratified by sex.",
+  align = c("l", rep("r", ncol(strat_display) - 1))
+)
+```
+
+```{r plot-lcga-sex-comparison, fig.cap="Predicted class trajectories by sample (pooled, boys, girls) and number of classes. Dashed lines: observed means within each sample.", fig.width=10, fig.height=8}
+tar_read(lcga_sex_comparison_plot, store = store)
+```
+
+::: {.callout-note title="Interpretation"}
+- At K = 3 the class shapes replicate almost exactly in both sexes.
+- Entropy peaks at 0.85 in boys, girls, and pooled. Sexes differ in class *prevalence* (thinner-than-ideal ~2× as common in boys), not shape. This is handled by sex in the membership model.
+- The pooled LCGA therefore makes sense as the primary specification.
+:::
+
+## Parenting model sensitivity analyses {#sec-supp-sensitivity}
+
+```{r tbl-parenting-sensitivity}
+knitr::kable(
+  tar_read(parenting_model_modal_table, store = store),
+  caption = "Sensitivity: modal class assignment (each child assigned wholly to their most likely class) instead of proportional posterior weighting."
+)
+knitr::kable(
+  tar_read(parenting_model_bothparents_table, store = store),
+  caption = "Sensitivity: both parents' warmth and anger jointly (subset with second-carer data)."
+)
+```
+
+::: {.callout-note title="Interpretation"}
+- Both agree with the primary model. Modal assignment gives slightly larger anger RRRs (1.18–1.19), consistent with mild attenuation under weighting.
+- In the both-parent subset (N = 4,780, two-parent households), Parent 1 anger → Class 3 holds (RRR 1.14). Parent 2 effects are essentially null
+  (I wouldn't read into the the P2 warmth → Class 1 result. There's no adjustment for multiplicity and it doesn't show up elsewhere).
+:::
+
+## Between-class residual variance {#sec-supp-variance}
+
+The primary LCGA holds the residual variance equal across classes. As a check on that choice, the chosen K = 3 model was re-fit allowing class-specific (proportional) residual variances and compared on fit and classification quality.
+
+```{r tbl-nwg}
+knitr::kable(
+  tar_read(lcga_nwg_comparison, store = store) |>
+    dplyr::transmute(
+      Model = sample,
+      Converged = ifelse(converged, "Yes", "No"),
+      BIC = sprintf("%.0f", BIC),
+      SABIC = sprintf("%.0f", SABIC),
+      Entropy = sprintf("%.2f", entropy),
+      `Class % (largest → smallest)` = class_props,
+      `Smallest class %` = sprintf("%.1f", smallest_class_pct)
+    ),
+  caption = "Primary equal-variance LCGA vs a class-specific residual-variance sensitivity, at K = 3.",
+  align = c("l", rep("r", 6))
+)
+```
+
+::: {.callout-note title="Interpretation"}
+- The table shows whether allowing class-specific variances
+  improves BIC/SABIC/entropy and if it changes the classes. It does
+  not - the model we already had fits (very slightly better) and given that class-specific variance can be more prone to not converging we can just stick with the original model.
+:::
+
+## Sex moderation: full model {#sec-supp-moderation}
+
+```{r moderation-model}
+knitr::kable(
+  tar_read(moderation_model_table, store = store),
+  caption = "Sex-moderation model: RRRs including sex × parenting interactions."
+)
+```
+
+```{r plot-moderation, fig.cap="Predicted class probabilities across baseline parenting, by sex (other covariates at sample mean).", fig.width=8, fig.height=7}
+tar_read(moderation_plot, store = store)
+```
+
+::: {.callout-note title="Interpretation"}
+- Same qualitative pattern in both sexes: probabilities shift with anger,
+  barely with warmth; sex differences are in levels only (already captured
+  by the sex main effect).
+:::
+
+## Sensitivity: absolute body dissatisfaction
+
+The primary analyses use the signed discrepancy, in which "thinner than ideal" and "larger than ideal" offset. The full analysis was repeated on the absolute discrepancy |perceived − ideal|, which is more about 'severity' than direction.
+
+```{r lcga-abs-stats}
+lcga_abs_stats <- tar_read(lcga_fit_stats, store = store) |>
+  dplyr::filter(outcome == "body_discrepancy_abs") |>
+  dplyr::transmute(
+    K = k,
+    Converged = ifelse(converged, "Yes", "No"),
+    BIC = sprintf("%.0f", BIC),
+    SABIC = sprintf("%.0f", SABIC),
+    Entropy = ifelse(is.na(entropy), "—", sprintf("%.2f", entropy)),
+    `Class % (largest → smallest)` = class_props
+  )
+knitr::kable(
+  lcga_abs_stats,
+  caption = "Class enumeration for absolute body dissatisfaction.",
+  align = c("l", rep("r", ncol(lcga_abs_stats) - 1))
+)
+```
+
+```{r plot-classes-abs, fig.cap="Final three-class model of absolute body dissatisfaction.", fig.width=7, fig.height=4.5}
+tar_read(lcga_class_plot_abs, store = store)
+```
+
+```{r tbl-parenting-abs}
+knitr::kable(
+  tar_read(parenting_model_table_abs, store = store),
+  caption = "Three-step model for absolute-discrepancy classes: RRR (95% bootstrap CI) vs the stable-low class (Class 1)."
+)
+```
+
+::: {.callout-note title="Interpretation"}
+- K = 3 again (entropy peak 0.87; only multi-class solution with all classes ≥5%): stable-low difference 83.1%, **worsening** 7.7% (~1.2 → 2.0),
+  **resolving** 9.2% (~2.4 → 0.8).
+  These classes captures *when* dissatisfaction occurs where the signed one captured *direction*.
+- Results are broadly the same: anger predicts both non-stable classes (worsening RRR 1.11, resolving 1.23 per SD). That suggests that the primary model is fine - this doesn't really change the results.
+:::

@@ -1,0 +1,101 @@
+#' .. content for \description{} (no empty lines) ..
+#'
+#' .. content for \details{} ..
+#'
+#' @title
+#' @param lcga_fits
+#' @param lcga_strat_fits
+#' @param df_model
+#' @param outcome
+#' @return
+#' @author Taren Sanders
+#' @export
+plot_lcga_sex_comparison <- function(
+  lcga_fits,
+  lcga_strat_fits,
+  df_model,
+  outcome = "body_discrepancy"
+) {
+  require(dplyr)
+  require(ggplot2)
+
+  fit_sets <- list(
+    Pooled = lcga_fits[grepl(
+      paste0("_", outcome, "_\\d+$"),
+      names(lcga_fits)
+    )],
+    Boys = lcga_strat_fits[grepl(
+      paste0("_", outcome, "_boys_\\d+$"),
+      names(lcga_strat_fits)
+    )],
+    Girls = lcga_strat_fits[grepl(
+      paste0("_", outcome, "_girls_\\d+$"),
+      names(lcga_strat_fits)
+    )]
+  )
+  data_sets <- list(
+    Pooled = df_model,
+    Boys = subset_model_data_by_sex(df_model, "boys"),
+    Girls = subset_model_data_by_sex(df_model, "girls")
+  )
+
+  preds <- purrr::imap_dfr(
+    fit_sets,
+    ~ dplyr::mutate(lcga_predictions(.x), sample = .y)
+  )
+  obs <- purrr::imap_dfr(data_sets, function(df, label) {
+    df |>
+      dplyr::group_by(time) |>
+      dplyr::summarise(est = mean(.data[[outcome]]), .groups = "drop") |>
+      dplyr::mutate(sample = label)
+  })
+
+  preds <- preds |>
+    dplyr::mutate(sample = factor(sample, levels = names(fit_sets)))
+  obs_all <- tidyr::crossing(
+    k_label = unique(preds$k_label),
+    obs
+  ) |>
+    dplyr::mutate(sample = factor(sample, levels = names(fit_sets)))
+
+  p <- ggplot(preds, aes(x = time, y = est, colour = class)) +
+    geom_line(linewidth = 0.7)
+
+  if (all(c("lower", "upper") %in% names(preds))) {
+    p <- p +
+      geom_ribbon(
+        aes(ymin = lower, ymax = upper, fill = class),
+        alpha = 0.15,
+        colour = NA
+      )
+  }
+
+  p +
+    geom_line(
+      data = obs_all,
+      aes(x = time, y = est),
+      inherit.aes = FALSE,
+      linetype = "dashed",
+      colour = "grey30"
+    ) +
+    geom_point(
+      data = obs_all,
+      aes(x = time, y = est),
+      inherit.aes = FALSE,
+      colour = "grey30",
+      size = 1.2
+    ) +
+    facet_grid(sample ~ k_label) +
+    scale_x_continuous(
+      breaks = c(0, 2, 4),
+      labels = c("8", "10", "12")
+    ) +
+    labs(
+      x = "Age (years)",
+      y = "Body dissatisfaction (perceived - ideal)",
+      colour = "Class",
+      fill = "Class",
+      caption = "Dashed line: observed means within each sample."
+    ) +
+    theme_minimal()
+}

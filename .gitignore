@@ -51,6 +51,7 @@ doc/*.tex
 # Others
 .DS_Store
 .vscode
+.claude/
 _targets/meta
 .Renviron_backup
 .Renviron
