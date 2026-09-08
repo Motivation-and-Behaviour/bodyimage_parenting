@@ -1,8 +1,8 @@
 #' Summarise fit statistics for one LCGA model
 #'
-#' One row per fit: convergence, information criteria (SABIC computed
-#' manually), relative entropy (manual, from posterior probabilities; NA for
-#' k = 1), and class proportions.
+#' One row per fit: convergence, number of (final) Marquardt iterations,
+#' information criteria (SABIC computed manually), relative entropy (manual,
+#' from posterior probabilities; NA for k = 1), and class proportions.
 #'
 #' @param fit An `hlme` fit from `fit_lcga()`.
 #' @param outcome Outcome column name (recorded in the row).
@@ -40,6 +40,7 @@ summarise_lcga_fit <- function(
     sample = sample,
     k = k,
     converged = fit$conv == 1,
+    niter = fit$niter,
     loglik = loglik,
     npm = npm,
     AIC = fit$AIC,

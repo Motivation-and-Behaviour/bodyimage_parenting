@@ -1,9 +1,11 @@
 #' Fit a latent class growth analysis for a given number of classes
 #'
 #' LCGA proper: linear class-specific trajectories, no within-class random
-#' effects (`random = ~ -1`), equal residual variance across classes
-#' (`nwg = FALSE`). The one-class model is fit directly; multi-class models
-#' start from it via `lcmm::gridsearch()` random starts, so each K branch is
+#' effects (`random = ~ -1`). Residual variance is held equal across classes
+#' by default (`nwg = FALSE`); set `nwg = TRUE` to estimate class-specific
+#' (proportional) residual variances — a between-class variance-structure
+#' sensitivity. The one-class model is fit directly; multi-class models start
+#' from it via `lcmm::gridsearch()` random starts, so each K branch is
 #' independent and reproducible under targets' per-target seeding. No
 #' `cl =` parallelism inside gridsearch — crew parallelises across K branches.
 #'
@@ -12,6 +14,8 @@
 #' @param outcome Outcome column name.
 #' @param rep Number of gridsearch random starts.
 #' @param maxiter_grid Iterations per random start before the best is refined.
+#' @param nwg Estimate class-specific proportional residual variances
+#'   (`hlme`'s `nwg`). Default `FALSE` (equal variance across classes).
 #' @return An `hlme` fit.
 #' @author Taren Sanders
 #' @export
@@ -20,7 +24,8 @@ fit_lcga <- function(
   k,
   outcome = "body_discrepancy",
   rep = 50,
-  maxiter_grid = 30
+  maxiter_grid = 30,
+  nwg = FALSE
 ) {
   require(lcmm)
 
@@ -52,7 +57,7 @@ fit_lcga <- function(
       random = ~ -1,
       subject = "id_num",
       ng = k,
-      nwg = FALSE,
+      nwg = nwg,
       data = df,
       verbose = FALSE
     ),

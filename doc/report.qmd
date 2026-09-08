@@ -72,7 +72,7 @@ knitr::kable(
 ## Trajectory classes
 
 Latent class growth analysis (LCGA — a model that sorts children into a small number of groups, each sharing an average trajectory) was fit with
-`lcmm::hlme()` for 1–5 classes, each from 50 random starts. Full enumeration statistics are in @sec-supp-enumeration; the three-class model was chosen on entropy (a 0–1 index of how cleanly children are classified into classes; higher is better, ≥0.8 is the rule of thumb for good allocation), class sizes, and interpretability. Entropy peaked at K = 3 (0.85), and a sex-stratified check (@sec-supp-stratified) showed the same three classes in boys and girls so I left them as pooled (the moderation analysis still tests for sex differences).
+`lcmm::hlme()` for 1–5 classes, each from 50 random starts. LCGA (no within-class random effects) was used rather than a latent growth mixture model because three timepoints with linear class trajectories cannot reliably identify within-class random slopes or growth-mixture variance components. Full enumeration statistics (including the number of final iterations each model took to converge) are in @sec-supp-enumeration; the three-class model was chosen on entropy (a 0–1 index of how cleanly children are classified into classes; higher is better, ≥0.8 is the rule of thumb for good allocation), class sizes, and interpretability. Entropy peaked at K = 3 (0.85), and a sex-stratified check (@sec-supp-stratified) showed the same three classes in boys and girls so I left them as pooled (the moderation analysis still tests for sex differences).
 
 ```{r plot-lcga-classes, fig.cap="Final three-class model: predicted trajectories (95% bands) and observed means by modal class.", fig.width=7, fig.height=4.5}
 tar_read(lcga_class_plot, store = store)
@@ -227,7 +227,39 @@ tar_read(body_dissatisfaction_plot, store = store)
   sex-stratified enumeration check and sex-moderation tests.
 :::
 
-## Baseline covariate missingness
+### Distribution of the outcome within classes
+
+`lcmm::hlme()` assumes the outcome is normal within each class.
+The histograms show the distribution of scores by age within each trajectory class, and the table gives skewness and kurtosis (0 would mean normal).
+
+```{r plot-outcome-distribution, fig.cap="Distribution of body dissatisfaction by age within each latent class.", fig.width=9, fig.height=6}
+tar_read(outcome_distribution_plot, store = store)
+```
+
+```{r tbl-outcome-normality}
+knitr::kable(
+  tar_read(outcome_normality_table, store = store) |>
+    dplyr::transmute(
+      Grouping = grouping,
+      Group = group,
+      N = n,
+      Mean = sprintf("%.2f", mean),
+      SD = sprintf("%.2f", sd),
+      Skewness = sprintf("%.2f", skewness),
+      `Excess kurtosis` = sprintf("%.2f", excess_kurtosis)
+    ),
+  caption = "Skewness and excess kurtosis of body dissatisfaction by wave and by latent class.",
+  align = c("l", "l", rep("r", 5))
+)
+```
+
+::: {.callout-note title="Interpretation"}
+- There is a small amount of skewness (especially the "thinner than ideal class), probably because the outcome is discrete and bounded. So the assumption is approximate rather than exact.
+- The sensitivity analyse all give the same result, (especially the absolute-discrepenacy analysis) which suggests that the minor non-normality
+  doesn't change what we conclude.
+:::
+
+## Missingness and attrition {#sec-supp-missingness}
 
 ```{r tbl-baseline-missingness}
 knitr::kable(
@@ -242,6 +274,28 @@ knitr::kable(
   decision.
 :::
 
+To see if any baseline characteristics are related to attrition, the tables below compare children by how many waves of the outcome they contributed. Don't just look at the p-value (the sample size inflates significance here). The standardized mean difference (SMD) is helpful to know if it is actually a big difference (SMD ≳ 0.1 is normally considered a non-trivial difference).
+
+```{r tbl-attrition-inclusion}
+attrition <- tar_read(attrition_table, store = store)
+knitr::kable(
+  attrition$by_inclusion,
+  caption = "Baseline (age 8) characteristics of children included in vs excluded from the trajectory sample (< 2 vs ≥ 2 waves)."
+)
+```
+
+```{r tbl-attrition-waves}
+knitr::kable(
+  attrition$by_waves,
+  caption = "Baseline (age 8) characteristics by number of observed waves."
+)
+```
+
+::: {.callout-note title="Interpretation"}
+- The SMDs are all pretty small, so attrition looks close to missing-at-random.
+- There is a small effect of socioeconomic position (which is pretty normal in longitudinal studies - lower SES families tend to dropout first), and maybe an effect of BMI (but, I'd say that is just because higher SES tends to mean higher BMI). I would probably report this, but say that the effect is small enough that it is unlikely to bias the results and so we went with MAR. 
+:::
+
 ## Trajectory class enumeration {#sec-supp-enumeration}
 
 ```{r lcga-fit-stats}
@@ -251,6 +305,7 @@ lcga_display <- lcga_stats |>
   dplyr::transmute(
     K = k,
     Converged = ifelse(converged, "Yes", "No"),
+    Iterations = niter,
     `Log-likelihood` = sprintf("%.1f", loglik),
     Parameters = npm,
     AIC = sprintf("%.0f", AIC),
@@ -274,6 +329,7 @@ tar_read(lcga_trajectory_plot, store = store)
 - All models converged. AIC/BIC/SABIC fall through K = 5, as
   expected at this N, so enumeration leans on entropy (peak 0.85 at K = 3),
   class sizes, and interpretability.
+- The Iterations column reports the iterations of the final convergence refit. Because that refit starts from the best of the 50 random starts (based on the first model), the multi-class models finish in a single additional iteration.
 - K = 4–5 split off small (<3%) fragments at the cost of entropy; the 2.8%
   class at K = 3 maps onto the "thinner than ideal" group in the
   descriptives, arguing for keeping it.
@@ -332,6 +388,33 @@ knitr::kable(
 - Both agree with the primary model. Modal assignment gives slightly larger anger RRRs (1.18–1.19), consistent with mild attenuation under weighting.
 - In the both-parent subset (N = 4,780, two-parent households), Parent 1 anger → Class 3 holds (RRR 1.14). Parent 2 effects are essentially null
   (I wouldn't read into the the P2 warmth → Class 1 result. There's no adjustment for multiplicity and it doesn't show up elsewhere).
+:::
+
+## Between-class residual variance {#sec-supp-variance}
+
+The primary LCGA holds the residual variance equal across classes. As a check on that choice, the chosen K = 3 model was re-fit allowing class-specific (proportional) residual variances and compared on fit and classification quality.
+
+```{r tbl-nwg}
+knitr::kable(
+  tar_read(lcga_nwg_comparison, store = store) |>
+    dplyr::transmute(
+      Model = sample,
+      Converged = ifelse(converged, "Yes", "No"),
+      BIC = sprintf("%.0f", BIC),
+      SABIC = sprintf("%.0f", SABIC),
+      Entropy = sprintf("%.2f", entropy),
+      `Class % (largest → smallest)` = class_props,
+      `Smallest class %` = sprintf("%.1f", smallest_class_pct)
+    ),
+  caption = "Primary equal-variance LCGA vs a class-specific residual-variance sensitivity, at K = 3.",
+  align = c("l", rep("r", 6))
+)
+```
+
+::: {.callout-note title="Interpretation"}
+- The table shows whether allowing class-specific variances
+  improves BIC/SABIC/entropy and if it changes the classes. It does
+  not - the model we already had fits (very slightly better) and given that class-specific variance can be more prone to not converging we can just stick with the original model.
 :::
 
 ## Sex moderation: full model {#sec-supp-moderation}

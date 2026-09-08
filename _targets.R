@@ -129,6 +129,7 @@ list(
   ),
   tar_target(df_model, make_model_data(df_clean), format = "qs"),
   tar_target(sample_flow_table, summarise_sample_flow(df_clean, df_model)),
+  tar_target(attrition_table, make_attrition_table(df_clean)),
   lcga_targets,
   tar_combine(
     lcga_fit_stats,
@@ -174,6 +175,37 @@ list(
   tar_target(
     lcga_class_plot,
     plot_lcga_classes(lcga_final, class_assignments, df_model)
+  ),
+  # GRoLTS 4 — within-class distribution / normality of the outcome
+  tar_target(
+    outcome_distribution_plot,
+    plot_outcome_distribution(df_model, class_assignments)
+  ),
+  tar_target(
+    outcome_normality_table,
+    summarise_outcome_normality(df_model, class_assignments)
+  ),
+  # GRoLTS 6b — between-class residual-variance sensitivity (class-specific
+  # proportional variances via nwg = TRUE) vs the equal-variance primary model
+  tar_target(
+    lcga_final_nwg,
+    fit_lcga(df_model, lcga_k_chosen, "body_discrepancy", nwg = TRUE),
+    format = "qs"
+  ),
+  tar_target(
+    lcga_nwg_comparison,
+    dplyr::bind_rows(
+      summarise_lcga_fit(
+        lcga_final,
+        "body_discrepancy",
+        sample = "Equal variance (primary)"
+      ),
+      summarise_lcga_fit(
+        lcga_final_nwg,
+        "body_discrepancy",
+        sample = "Class-specific variance"
+      )
+    )
   ),
   # Step 4 — three-step prep + class descriptives
   tar_target(

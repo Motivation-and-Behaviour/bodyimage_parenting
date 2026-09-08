@@ -1,7 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(Rscript -e 'od <- targets::tar_outdated\\(\\); cat\\(length\\(od\\), \"targets still outdated\\\\n\"\\); print\\(head\\(od, 40\\)\\)')"
-    ]
-  }
-}
