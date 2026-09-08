@@ -1,17 +1,13 @@
-#' Compare pooled and sex-stratified LCGA trajectories across K
+#' .. content for \description{} (no empty lines) ..
 #'
-#' Diagnostic for the class-enumeration decision: predicted class
-#' trajectories faceted by sample (pooled / boys / girls) x number of
-#' classes, with each sample's observed means overlaid. If the stratified
-#' shapes mirror the pooled ones, sex differences are a matter of class
-#' prevalence (handled by the membership model) rather than class shape.
+#' .. content for \details{} ..
 #'
-#' @param lcga_fits Named list of pooled `hlme` fits (one per K).
-#' @param lcga_strat_fits Named list of stratified fits; names contain
-#'   "boys"/"girls".
-#' @param df_model Modelling data from `make_model_data()`.
-#' @param outcome Outcome column name.
-#' @return A ggplot object.
+#' @title
+#' @param lcga_fits
+#' @param lcga_strat_fits
+#' @param df_model
+#' @param outcome
+#' @return
 #' @author Taren Sanders
 #' @export
 plot_lcga_sex_comparison <- function(
@@ -96,7 +92,7 @@ plot_lcga_sex_comparison <- function(
     ) +
     labs(
       x = "Age (years)",
-      y = "Body dissatisfaction (perceived − ideal)",
+      y = "Body dissatisfaction (perceived - ideal)",
       colour = "Class",
       fill = "Class",
       caption = "Dashed line: observed means within each sample."

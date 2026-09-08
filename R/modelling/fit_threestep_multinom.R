@@ -1,47 +1,13 @@
-#' Flatten a multinom coefficient matrix to a named vector
+#' .. content for \description{} (no empty lines) ..
 #'
-#' Names are `"<class>:<term>"`; kept stable across bootstrap refits because
-#' the class factor levels are fixed in the analysis data.
+#' .. content for \details{} ..
 #'
-#' @param model An `nnet::multinom` fit.
-#' @return Named numeric vector of coefficients.
-#' @author Taren Sanders
-#' @export
-multinom_coef_vector <- function(model) {
-  co <- coef(model)
-  if (!is.matrix(co)) {
-    co <- matrix(
-      co,
-      nrow = 1,
-      dimnames = list(model$lev[2], names(co))
-    )
-  }
-  out <- as.vector(t(co))
-  names(out) <- paste(
-    rep(rownames(co), each = ncol(co)),
-    colnames(co),
-    sep = ":"
-  )
-  out
-}
-
-#' Three-step class-membership model with cluster bootstrap
-#'
-#' Multinomial logistic regression of latent class membership on baseline
-#' covariates, with classification uncertainty propagated by proportional
-#' posterior weights (rows built in `prepare_threestep_data()`). Model-based
-#' SEs are invalid (a child's rows are not independent), so inference uses a
-#' cluster bootstrap over children: percentile 95% CIs and normal-approximation
-#' p-values from the bootstrap SE. The LCGA itself is held fixed throughout
-#' (stated limitation: classification error is not re-estimated, justified at
-#' high entropy).
-#'
-#' @param threestep_data Output of `prepare_threestep_data()`.
-#' @param rhs Character vector of right-hand-side terms.
-#' @param n_boot Number of bootstrap resamples.
-#' @param maxit Max iterations for `nnet::multinom`.
-#' @return List: `model`, `boot_draws`, `tidy`, `ref_class`, `n_children`,
-#'   `n_boot_failed`, `rhs`.
+#' @title
+#' @param threestep_data df. Output of prepare_threestep_data().
+#' @param rhs character. Right hand side terms.
+#' @param n_boot
+#' @param maxit
+#' @return
 #' @author Taren Sanders
 #' @export
 fit_threestep_multinom <- function(
@@ -58,7 +24,7 @@ fit_threestep_multinom <- function(
   df <- threestep_data |>
     dplyr::filter(stats::complete.cases(dplyr::pick(dplyr::all_of(vars))))
 
-  # Reference class = largest class (by total posterior weight).
+  # reference = largest class
   class_sizes <- df |>
     dplyr::group_by(class) |>
     dplyr::summarise(size = sum(w), .groups = "drop")
@@ -139,4 +105,23 @@ fit_threestep_multinom <- function(
     n_boot_failed = n_boot_failed,
     rhs = rhs
   )
+}
+
+# coef matrix to a named vector ("class:term")
+multinom_coef_vector <- function(model) {
+  co <- coef(model)
+  if (!is.matrix(co)) {
+    co <- matrix(
+      co,
+      nrow = 1,
+      dimnames = list(model$lev[2], names(co))
+    )
+  }
+  out <- as.vector(t(co))
+  names(out) <- paste(
+    rep(rownames(co), each = ncol(co)),
+    colnames(co),
+    sep = ":"
+  )
+  out
 }

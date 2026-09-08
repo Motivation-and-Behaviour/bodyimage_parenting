@@ -36,8 +36,7 @@ make_descriptives_table <- function(df_clean) {
     )
 
   make_table <- function(strata) {
-    # Stratifying variables can't also be summary rows (e.g. drop sex from the
-    # rows when stratifying by sex).
+    # can't stratify by a variable that is also a row
     vars <- setdiff(colnames(table_df), c("age_cat", "cohort", strata))
     tab <- tableone::CreateTableOne(
       vars = vars,

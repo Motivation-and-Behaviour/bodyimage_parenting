@@ -1,22 +1,15 @@
-#' Fit a latent class growth analysis for a given number of classes
+#' .. content for \description{} (no empty lines) ..
 #'
-#' LCGA proper: linear class-specific trajectories, no within-class random
-#' effects (`random = ~ -1`). Residual variance is held equal across classes
-#' by default (`nwg = FALSE`); set `nwg = TRUE` to estimate class-specific
-#' (proportional) residual variances — a between-class variance-structure
-#' sensitivity. The one-class model is fit directly; multi-class models start
-#' from it via `lcmm::gridsearch()` random starts, so each K branch is
-#' independent and reproducible under targets' per-target seeding. No
-#' `cl =` parallelism inside gridsearch — crew parallelises across K branches.
+#' .. content for \details{} ..
 #'
-#' @param df_model Modelling data from `make_model_data()`.
-#' @param k Number of latent classes.
-#' @param outcome Outcome column name.
-#' @param rep Number of gridsearch random starts.
-#' @param maxiter_grid Iterations per random start before the best is refined.
-#' @param nwg Estimate class-specific proportional residual variances
-#'   (`hlme`'s `nwg`). Default `FALSE` (equal variance across classes).
-#' @return An `hlme` fit.
+#' @title
+#' @param df_model df. The modelling data.
+#' @param k integer. Number of classes.
+#' @param outcome character. The outcome variable.
+#' @param rep integer. Number of gridsearch starts.
+#' @param maxiter_grid
+#' @param nwg
+#' @return
 #' @author Taren Sanders
 #' @export
 fit_lcga <- function(
@@ -40,16 +33,14 @@ fit_lcga <- function(
     data = df,
     verbose = FALSE
   )
-  # The stored call holds the symbol `fixed`, but predictY() re-parses the
-  # formula from the call, so substitute the actual formula in.
+  # predictY() re-parses the call, so put the real formula back
   m1$call$fixed <- fixed
 
   if (k == 1) {
     return(m1)
   }
 
-  # gridsearch() deparses the inner call's function name, so it must be the
-  # bare `hlme` (lcmm attached via require above), not `lcmm::hlme`.
+  # gridsearch() deparses the call, so this has to be the bare hlme
   m <- lcmm::gridsearch(
     hlme(
       fixed,

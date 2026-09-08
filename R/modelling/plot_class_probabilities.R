@@ -1,14 +1,11 @@
-#' Predicted class probabilities across parenting, by sex
+#' .. content for \description{} (no empty lines) ..
 #'
-#' For the sex-moderation model: predicted probability of each trajectory
-#' class across each parenting variable (the other parenting variable and
-#' continuous covariates held at 0 = sample mean), separately by sex.
+#' .. content for \details{} ..
 #'
-#' @param threestep_fit Output of `fit_threestep_multinom()` for the
-#'   moderation model.
-#' @param threestep_data Output of `prepare_threestep_data()` (for factor
-#'   levels).
-#' @return A ggplot object.
+#' @title
+#' @param threestep_fit
+#' @param threestep_data
+#' @return
 #' @author Taren Sanders
 #' @export
 plot_class_probabilities <- function(threestep_fit, threestep_data) {

@@ -1,7 +1,10 @@
-#' Format a growth model's fixed effects as a report-ready table
+#' .. content for \description{} (no empty lines) ..
 #'
-#' @param growth_fit Output of `fit_growth_model()`.
-#' @return Tibble ready for `knitr::kable()`.
+#' .. content for \details{} ..
+#'
+#' @title
+#' @param growth_fit
+#' @return
 #' @author Taren Sanders
 #' @export
 make_growth_model_table <- function(growth_fit) {
@@ -19,7 +22,7 @@ make_growth_model_table <- function(growth_fit) {
   label_term <- function(term) {
     atoms <- strsplit(term, ":", fixed = TRUE)[[1]]
     labelled <- dplyr::coalesce(unname(atom_labels[atoms]), atoms)
-    paste(labelled, collapse = " × ")
+    paste(labelled, collapse = " x ")
   }
 
   growth_fit$tidy |>

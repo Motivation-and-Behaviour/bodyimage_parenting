@@ -1,13 +1,12 @@
-#' Summarise fit statistics for one LCGA model
+#' .. content for \description{} (no empty lines) ..
 #'
-#' One row per fit: convergence, number of (final) Marquardt iterations,
-#' information criteria (SABIC computed manually), relative entropy (manual,
-#' from posterior probabilities; NA for k = 1), and class proportions.
+#' .. content for \details{} ..
 #'
-#' @param fit An `hlme` fit from `fit_lcga()`.
-#' @param outcome Outcome column name (recorded in the row).
-#' @param sample Label for the analysis sample (e.g. "pooled", "boys").
-#' @return A one-row tibble of fit statistics.
+#' @title
+#' @param fit
+#' @param outcome
+#' @param sample
+#' @return
 #' @author Taren Sanders
 #' @export
 summarise_lcga_fit <- function(

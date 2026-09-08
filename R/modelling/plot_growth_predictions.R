@@ -1,11 +1,10 @@
-#' Predicted growth trajectories at ±1 SD of parenting, by sex
+#' .. content for \description{} (no empty lines) ..
 #'
-#' Fixed-effects (population-level) predictions from the sex-moderation
-#' growth model: trajectories at ±1 SD of each parenting variable (the other
-#' at 0), by sex, with SES and BMI z-score at 0.
+#' .. content for \details{} ..
 #'
-#' @param growth_moderation Output of `fit_growth_model(moderation = TRUE)`.
-#' @return A ggplot object.
+#' @title
+#' @param growth_moderation
+#' @return
 #' @author Taren Sanders
 #' @export
 plot_growth_predictions <- function(growth_moderation) {
@@ -49,7 +48,7 @@ plot_growth_predictions <- function(growth_moderation) {
       level = factor(
         level,
         levels = c(-1, 1),
-        labels = c("−1 SD", "+1 SD")
+        labels = c("-1 SD", "+1 SD")
       )
     ) |>
     ggplot(aes(

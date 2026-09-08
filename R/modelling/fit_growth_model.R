@@ -1,17 +1,12 @@
-#' Fit the secondary continuous growth model
+#' .. content for \description{} (no empty lines) ..
 #'
-#' Multilevel linear growth model of body dissatisfaction on the same
-#' primary regression sample as the three-step models (complete Parent 1
-#' baseline covariates). Parenting main effects estimate associations with
-#' the *level* at age 8 (time = 0); parenting x time terms estimate
-#' associations with *change* per year. Random intercept + slope for time by
-#' child, dropped to intercept-only if the fit is singular or fails to
-#' converge (only three timepoints).
+#' .. content for \details{} ..
 #'
-#' @param df_model Modelling data from `make_model_data()`.
-#' @param outcome Outcome column name.
-#' @param moderation Add the sex x parenting x time interaction block.
-#' @return List: `model`, `tidy`, `random_structure`, `n_children`, `n_obs`.
+#' @title
+#' @param df_model
+#' @param outcome
+#' @param moderation logical. Add the sex interactions.
+#' @return
 #' @author Taren Sanders
 #' @export
 fit_growth_model <- function(
@@ -53,6 +48,7 @@ fit_growth_model <- function(
     lmerTest::lmer(formula_full, data = df, REML = TRUE)
   }
 
+  # drop the random slope if it is singular
   fit <- tryCatch(fit_with("(1 + time | id_num)"), error = function(e) NULL)
   random_structure <- "random intercept + slope"
   if (is.null(fit) || lme4::isSingular(fit, tol = 1e-4)) {
@@ -83,16 +79,6 @@ fit_growth_model <- function(
   )
 }
 
-#' Likelihood-ratio test for the sex-moderation block in the growth model
-#'
-#' `anova()` on the two lmer fits (refit with ML automatically) testing the
-#' joint contribution of the sex x parenting (x time) interaction terms.
-#'
-#' @param growth_main Output of `fit_growth_model(moderation = FALSE)`.
-#' @param growth_moderation Output of `fit_growth_model(moderation = TRUE)`.
-#' @return One-row tibble: statistic, df, p.
-#' @author Taren Sanders
-#' @export
 growth_moderation_test <- function(growth_main, growth_moderation) {
   comparison <- anova(growth_main$model, growth_moderation$model)
 

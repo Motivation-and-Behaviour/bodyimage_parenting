@@ -1,12 +1,11 @@
-#' Summarise the flow from the cleaned data to the analysis samples
+#' .. content for \description{} (no empty lines) ..
 #'
-#' Counts children at each inclusion stage (any PBI wave, the >= 2 wave
-#' trajectory sample, all three waves, complete baseline covariates) and
-#' tabulates baseline covariate missingness within the trajectory sample.
+#' .. content for \details{} ..
 #'
-#' @param df_clean Cleaned data from `clean_data()`.
-#' @param df_model Modelling data from `make_model_data()`.
-#' @return List with `flow` and `baseline_missingness` tibbles.
+#' @title
+#' @param df_clean
+#' @param df_model
+#' @return
 #' @author Taren Sanders
 #' @export
 summarise_sample_flow <- function(df_clean, df_model) {
@@ -27,14 +26,11 @@ summarise_sample_flow <- function(df_clean, df_model) {
     dplyr::filter(!is.na(body_discrepancy)) |>
     dplyr::count(id, name = "n_waves")
 
-  # One row per child in the trajectory sample (baselines are constant within
-  # child, so distinct() collapses to one row each).
   df_baseline <- df_model |>
     dplyr::select(id, dplyr::all_of(baseline_vars)) |>
     dplyr::distinct()
 
-  # The primary regressions use Parent 1 parenting only; the both-parent model
-  # (adding Parent 2) is a sensitivity analysis on its complete cases.
+  # P2 vars only needed for the both-parent sensitivity model
   primary_vars <- setdiff(
     baseline_vars,
     c("parenting_warm_p2_z_bl", "parenting_angry_p2_z_bl")
@@ -48,8 +44,8 @@ summarise_sample_flow <- function(df_clean, df_model) {
   flow <- tibble::tibble(
     Stage = c(
       "Children in cleaned data",
-      "≥ 1 wave with a PBI score",
-      "≥ 2 waves with a PBI score (trajectory sample)",
+      ">= 1 wave with a PBI score",
+      ">= 2 waves with a PBI score (trajectory sample)",
       "All 3 waves with a PBI score",
       "Complete baseline covariates, Parent 1 model (regression sample)",
       "Complete baseline covariates incl. Parent 2 (sensitivity sample)"

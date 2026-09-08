@@ -1,13 +1,10 @@
-#' Build the long modelling dataset for the trajectory analysis
+#' .. content for \description{} (no empty lines) ..
 #'
-#' One row per child x wave with a non-missing body discrepancy score, keeping
-#' children observed at two or more such waves. Baseline (age 8) covariates are
-#' joined back to every row with a `_bl` suffix; children without an age-8 row
-#' keep NA baselines so they stay in the LCGA and drop only from regressions.
+#' .. content for \details{} ..
 #'
-#' @param df_clean Cleaned data from `clean_data()`.
-#' @return Long tibble with `time`, `id_num`, `body_discrepancy_abs`, and
-#'   `_bl`-suffixed baseline covariates.
+#' @title
+#' @param df_clean
+#' @return
 #' @author Taren Sanders
 #' @export
 make_model_data <- function(df_clean) {
@@ -23,8 +20,7 @@ make_model_data <- function(df_clean) {
     "parenting_angry_p2_z"
   )
 
-  # Baseline covariates come from the age-8 row even when the PBI items are
-  # missing there, since the covariates were still measured at that wave.
+  # covariates come from the age 8 row even if PBI is missing there
   df_baseline <- df_clean |>
     dplyr::filter(age_cat == 8) |>
     dplyr::select(id, dplyr::all_of(baseline_vars)) |>
@@ -38,7 +34,7 @@ make_model_data <- function(df_clean) {
     dplyr::mutate(
       time = age_cat - 8,
       body_discrepancy_abs = abs(body_discrepancy),
-      # hlme() requires a numeric subject identifier.
+      # hlme needs a numeric id
       id_num = as.integer(factor(id))
     ) |>
     dplyr::left_join(df_baseline, by = "id") |>

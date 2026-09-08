@@ -10,8 +10,7 @@
 tidy_data <- function(waves_joined) {
   require(dplyr)
 
-  # Recode the LSAC missing-data codes to NA. Continuous variables use the
-  # numeric sentinels; the labelled factors keep them as their character codes.
+  # LSAC missing codes
   waves_joined[waves_joined == -9] <- NA
   waves_joined[waves_joined == -99] <- NA
 
@@ -25,8 +24,7 @@ tidy_data <- function(waves_joined) {
         )
       ),
       dplyr::across(where(is.factor), forcats::fct_drop),
-      # The B and K cohorts are offset in wave number but aligned in age, so a
-      # design-age band (not the raw wave) is the common time axis.
+      # align cohorts by age rather than wave
       age_cat = dplyr::case_when(
         cohort == "B" & wave == 5 ~ 8,
         cohort == "B" & wave == 6 ~ 10,

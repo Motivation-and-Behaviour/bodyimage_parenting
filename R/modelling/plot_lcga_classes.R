@@ -1,16 +1,14 @@
-#' Plot the final LCGA model's class trajectories
+#' .. content for \description{} (no empty lines) ..
 #'
-#' Predicted mean trajectories with 95% bands for the chosen model, using the
-#' stable (intercept-ordered) class labels, overlaid with the observed means
-#' of children modally assigned to each class. Legend labels include class
-#' percentages.
+#' .. content for \details{} ..
 #'
-#' @param lcga_final The chosen `hlme` fit.
-#' @param class_assignments Output of `extract_class_assignments()`.
-#' @param df_model Modelling data from `make_model_data()`.
-#' @param outcome Outcome column name.
-#' @param ylab Y-axis label.
-#' @return A ggplot object.
+#' @title
+#' @param lcga_final
+#' @param class_assignments
+#' @param df_model
+#' @param outcome
+#' @param ylab
+#' @return
 #' @author Taren Sanders
 #' @export
 plot_lcga_classes <- function(
@@ -18,7 +16,7 @@ plot_lcga_classes <- function(
   class_assignments,
   df_model,
   outcome = "body_discrepancy",
-  ylab = "Body dissatisfaction (perceived − ideal)"
+  ylab = "Body dissatisfaction (perceived - ideal)"
 ) {
   require(dplyr)
   require(ggplot2)

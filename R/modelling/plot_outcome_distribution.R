@@ -1,23 +1,20 @@
-#' Distribution of the observed outcome by wave within latent class (GRoLTS 4)
+#' .. content for \description{} (no empty lines) ..
 #'
-#' Bar charts of the discrete body-dissatisfaction score, faceted by latent
-#' class (rows) and wave (columns). Mean/SD alone cannot show whether the
-#' outcome is normally distributed within classes; because `hlme` assumes
-#' conditional normality and the score is a bounded -6..+6 integer, a bar chart
-#' (not a histogram) is the honest depiction.
+#' .. content for \details{} ..
 #'
-#' @param df_model Modelling data from `make_model_data()`.
-#' @param class_assignments Output of `extract_class_assignments()`.
-#' @param outcome Outcome column name.
-#' @param xlab X-axis label.
-#' @return A ggplot object.
+#' @title
+#' @param df_model
+#' @param class_assignments
+#' @param outcome
+#' @param xlab
+#' @return
 #' @author Taren Sanders
 #' @export
 plot_outcome_distribution <- function(
   df_model,
   class_assignments,
   outcome = "body_discrepancy",
-  xlab = "Body dissatisfaction (perceived − ideal)"
+  xlab = "Body dissatisfaction (perceived - ideal)"
 ) {
   require(dplyr)
   require(ggplot2)

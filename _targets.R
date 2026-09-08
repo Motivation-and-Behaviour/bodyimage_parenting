@@ -40,24 +40,15 @@ lsac_files <- c(
 lsac_path <- "/data/2 LSAC 10 General Release/Survey Data/SPSS"
 input_files <- file.path(lsac_path, lsac_files)
 
-# LCGA class-enumeration grid: one branch per outcome x K, combined below.
-# body_discrepancy_abs is the Step 7 sensitivity outcome.
 lcga_spec <- tidyr::expand_grid(
   outcome = c("body_discrepancy", "body_discrepancy_abs"),
   k = 1:5
 )
 
-# Chosen number of classes (decided with user 2026-07-23 after reviewing
-# enumeration + sex-stratified check). The only place to change K.
+# chosen after reviewing the enumeration
 lcga_k_chosen <- 3
-
-# Step 7 sensitivity outcome: K = 3 chosen 2026-07-23 (entropy peaks at 0.87,
-# the only solution with all classes >= 5%, interpretable stable-low /
-# resolving / worsening structure; K = 4-5 add <2% fragments and K = 5 drops
-# entropy below 0.8).
 lcga_k_chosen_abs <- 3
 
-# Right-hand sides for the three-step class-membership models.
 rhs_parenting_primary <- c(
   "parenting_warm_p1_z_bl",
   "parenting_angry_p1_z_bl",
@@ -88,8 +79,6 @@ lcga_targets <- tar_map(
   tar_target(lcga_fit_summary, summarise_lcga_fit(lcga_fit, outcome))
 )
 
-# Sex-stratified enumeration: diagnostic for the pooled-vs-stratified
-# decision, run before freezing K (see ANALYSIS_PLAN.md Step 3).
 lcga_strat_spec <- tidyr::expand_grid(
   outcome = "body_discrepancy",
   sex_group = c("boys", "girls"),
@@ -176,7 +165,6 @@ list(
     lcga_class_plot,
     plot_lcga_classes(lcga_final, class_assignments, df_model)
   ),
-  # GRoLTS 4 — within-class distribution / normality of the outcome
   tar_target(
     outcome_distribution_plot,
     plot_outcome_distribution(df_model, class_assignments)
@@ -185,8 +173,7 @@ list(
     outcome_normality_table,
     summarise_outcome_normality(df_model, class_assignments)
   ),
-  # GRoLTS 6b — between-class residual-variance sensitivity (class-specific
-  # proportional variances via nwg = TRUE) vs the equal-variance primary model
+  # sensitivity: class-specific residual variance
   tar_target(
     lcga_final_nwg,
     fit_lcga(df_model, lcga_k_chosen, "body_discrepancy", nwg = TRUE),
@@ -207,7 +194,7 @@ list(
       )
     )
   ),
-  # Step 4 — three-step prep + class descriptives
+  # class membership models
   tar_target(
     threestep_data,
     prepare_threestep_data(class_assignments, df_model),
@@ -222,7 +209,6 @@ list(
     class_descriptives_table,
     make_class_descriptives_table(class_assignments, df_model)
   ),
-  # Step 5 — class-membership regressions
   tar_target(
     parenting_model,
     fit_threestep_multinom(threestep_data, rhs_parenting_primary),
@@ -247,7 +233,6 @@ list(
     parenting_model_modal_table,
     make_multinom_table(parenting_model_modal)
   ),
-  # Step 6 — sex moderation
   tar_target(
     moderation_model,
     fit_threestep_multinom(threestep_data, rhs_parenting_moderation),
@@ -262,7 +247,7 @@ list(
     moderation_plot,
     plot_class_probabilities(moderation_model, threestep_data)
   ),
-  # Step 6b — secondary continuous growth models
+  # growth models
   tar_target(
     growth_model,
     fit_growth_model(df_model, "body_discrepancy"),
@@ -295,15 +280,14 @@ list(
     growth_predictions_plot,
     plot_growth_predictions(growth_moderation_model)
   ),
-  # Step 7 — abs-outcome enumeration plot (final-model chain added after the
-  # enumeration is reviewed and lcga_k_chosen_abs is set)
+  # absolute discrepancy sensitivity
   tar_target(
     lcga_trajectory_plot_abs,
     plot_lcga_trajectories(
       lcga_fits,
       df_model,
       outcome = "body_discrepancy_abs",
-      ylab = "Absolute body dissatisfaction |perceived − ideal|"
+      ylab = "Absolute body dissatisfaction |perceived - ideal|"
     )
   ),
   tar_target(
@@ -323,7 +307,7 @@ list(
       class_assignments_abs,
       df_model,
       outcome = "body_discrepancy_abs",
-      ylab = "Absolute body dissatisfaction |perceived − ideal|"
+      ylab = "Absolute body dissatisfaction |perceived - ideal|"
     )
   ),
   tar_target(

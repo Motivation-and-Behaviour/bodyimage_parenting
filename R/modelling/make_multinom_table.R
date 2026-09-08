@@ -1,10 +1,10 @@
-#' Format a three-step multinomial model as a report-ready table
+#' .. content for \description{} (no empty lines) ..
 #'
-#' One row per predictor, one RRR (95% CI) / p pair of columns per non-
-#' reference class. Bootstrap CIs are injected manually (hence no gtsummary).
+#' .. content for \details{} ..
 #'
-#' @param threestep_fit Output of `fit_threestep_multinom()`.
-#' @return Tibble ready for `knitr::kable()`.
+#' @title
+#' @param threestep_fit
+#' @return
 #' @author Taren Sanders
 #' @export
 make_multinom_table <- function(threestep_fit) {
@@ -19,8 +19,8 @@ make_multinom_table <- function(threestep_fit) {
     sexFemale = "Sex: female",
     ses_z_bl = "SES (per SD)",
     bmiz_bl = "BMI z-score (per SD)",
-    "parenting_warm_p1_z_bl:sexFemale" = "Warmth P1 × female",
-    "parenting_angry_p1_z_bl:sexFemale" = "Anger P1 × female"
+    "parenting_warm_p1_z_bl:sexFemale" = "Warmth P1 x female",
+    "parenting_angry_p1_z_bl:sexFemale" = "Anger P1 x female"
   )
 
   fmt_p <- function(p) {

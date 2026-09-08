@@ -27,7 +27,7 @@ clean_data <- function(df_tidy, remove_outliers = TRUE) {
   df_clean <- df_tidy
 
   if (remove_outliers) {
-    # Flag values more than 4 SD from the mean within each wave and cohort.
+    # outliers: > 4 SD within wave and cohort
     df_clean <- df_clean |>
       dplyr::group_by(wave, cohort) |>
       dplyr::mutate(dplyr::across(
@@ -35,7 +35,6 @@ clean_data <- function(df_tidy, remove_outliers = TRUE) {
         ~ dplyr::if_else(abs(scale(.x)[, 1]) > 4, NA_real_, .x)
       )) |>
       dplyr::ungroup() |>
-      # BMI is handled via its pre-standardised z-score; drop the raw BMI too.
       dplyr::mutate(
         bmiz = dplyr::if_else(abs(bmiz) > 4, NA_real_, bmiz),
         bmi = dplyr::if_else(is.na(bmiz), NA_real_, bmi)
@@ -52,10 +51,7 @@ clean_data <- function(df_tidy, remove_outliers = TRUE) {
     )) |>
     dplyr::ungroup()
 
-  # Children's Body Image Scale (Truby & Paxton, 2002): the perceived-minus-ideal
-  # figure discrepancy is the standard body-dissatisfaction score. Figures run
-  # from thinnest (Picture 1) to heaviest (Picture 7), so a positive score means
-  # the child perceives themselves as larger than their ideal.
+  # perceived minus ideal figure; positive = feels larger than ideal
   df_clean <- df_clean |>
     dplyr::mutate(
       body_perceived = as.numeric(
@@ -73,8 +69,7 @@ clean_data <- function(df_tidy, remove_outliers = TRUE) {
         ),
         levels = c("Thinner than ideal", "Ideal", "Larger than ideal")
       ),
-      # Direction-agnostic version: any perceived-ideal mismatch counts as
-      # dissatisfied, regardless of which way or by how much.
+      # any mismatch, either direction
       body_dissatisfied = factor(
         dplyr::if_else(body_discrepancy == 0, "Satisfied", "Dissatisfied"),
         levels = c("Satisfied", "Dissatisfied")

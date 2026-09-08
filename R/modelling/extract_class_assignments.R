@@ -1,34 +1,11 @@
-#' Order LCGA classes by ascending class-specific intercept
+#' .. content for \description{} (no empty lines) ..
 #'
-#' Label-switching guard: lcmm's class numbering is arbitrary across refits,
-#' so downstream targets relabel classes by their predicted value at baseline
-#' (time = 0). Element j of the result is the original class index that
-#' becomes stable class j.
+#' .. content for \details{} ..
 #'
-#' @param fit An `hlme` fit.
-#' @return Integer vector mapping stable class -> original class.
-#' @author Taren Sanders
-#' @export
-lcga_class_order <- function(fit) {
-  intercepts <- lcmm::predictY(
-    fit,
-    newdata = data.frame(time = 0),
-    var.time = "time"
-  )$pred
-  order(as.numeric(intercepts))
-}
-
-#' Extract stable class assignments and posterior probabilities
-#'
-#' Relabels classes by ascending baseline intercept (see
-#' `lcga_class_order()`), permutes the posterior-probability columns to
-#' match, and returns one row per child.
-#'
-#' @param lcga_final The chosen `hlme` fit.
-#' @param df_model Modelling data from `make_model_data()` (for the
-#'   `id`/`id_num` map).
-#' @return Tibble: `id`, `id_num`, `class` (stable factor), `pprob_1..K`,
-#'   `modal_pprob`.
+#' @title
+#' @param lcga_final
+#' @param df_model
+#' @return
 #' @author Taren Sanders
 #' @export
 extract_class_assignments <- function(lcga_final, df_model) {
@@ -53,4 +30,14 @@ extract_class_assignments <- function(lcga_final, df_model) {
       by = "id_num"
     ) |>
     dplyr::relocate(id, id_num, class, dplyr::starts_with("pprob_"))
+}
+
+# lcmm numbers classes arbitrarily, so order them by intercept
+lcga_class_order <- function(fit) {
+  intercepts <- lcmm::predictY(
+    fit,
+    newdata = data.frame(time = 0),
+    var.time = "time"
+  )$pred
+  order(as.numeric(intercepts))
 }

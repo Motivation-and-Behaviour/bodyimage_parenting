@@ -1,75 +1,20 @@
-#' Predicted class trajectories for a list of LCGA fits
+#' .. content for \description{} (no empty lines) ..
 #'
-#' Shared helper for the enumeration plots: `predictY()` for each fit with
-#' 95% bands where the fit allows draws, parsed into a long tibble.
+#' .. content for \details{} ..
 #'
-#' @param fits Named list of `hlme` fits (one per K).
-#' @return Tibble with `k`, `k_label`, `class`, `time`, `est`, `lower`,
-#'   `upper`.
-#' @author Taren Sanders
-#' @export
-lcga_predictions <- function(fits) {
-  require(dplyr)
-
-  newdata <- data.frame(time = 0:4)
-
-  preds <- purrr::map_dfr(fits, function(fit) {
-    # draws = TRUE needs an invertible variance matrix; fall back to point
-    # predictions if a fit can't provide draws.
-    py <- tryCatch(
-      lcmm::predictY(fit, newdata = newdata, var.time = "time", draws = TRUE),
-      error = function(e) {
-        lcmm::predictY(fit, newdata = newdata, var.time = "time")
-      }
-    )
-    pred <- as.data.frame(py$pred)
-    pred$time <- newdata$time
-    # Columns are Ypred / lower.Ypred / upper.Ypred, suffixed _classX when
-    # ng > 1 (draws = TRUE gives the lower/upper columns).
-    pred |>
-      tidyr::pivot_longer(-time, names_to = "col", values_to = "value") |>
-      dplyr::mutate(
-        quantile = dplyr::case_when(
-          stringr::str_starts(col, "lower") ~ "lower",
-          stringr::str_starts(col, "upper") ~ "upper",
-          TRUE ~ "est"
-        ),
-        class = dplyr::coalesce(
-          stringr::str_extract(col, "(?<=class)\\d+"),
-          "1"
-        ),
-        k = fit$ng
-      )
-  })
-
-  preds |>
-    tidyr::pivot_wider(
-      id_cols = c(k, class, time),
-      names_from = quantile,
-      values_from = value
-    ) |>
-    dplyr::mutate(k_label = factor(paste0("K = ", k)))
-}
-
-#' Plot predicted class trajectories for each candidate K
-#'
-#' Predicted mean trajectories (with 95% bands where the fit allows draws)
-#' per class, faceted by number of classes, with the observed overall means
-#' overlaid for reference.
-#'
-#' @param fits Named list of `hlme` fits (one per K); fits for other outcomes
-#'   are dropped by matching `outcome` against the target names.
-#' @param df_model Modelling data from `make_model_data()`.
-#' @param outcome Outcome column name.
-#' @param ylab Y-axis label.
-#' @return A ggplot object.
+#' @title
+#' @param fits list. hlme fits, one per K.
+#' @param df_model
+#' @param outcome
+#' @param ylab
+#' @return
 #' @author Taren Sanders
 #' @export
 plot_lcga_trajectories <- function(
   fits,
   df_model,
   outcome = "body_discrepancy",
-  ylab = "Body dissatisfaction (perceived − ideal)"
+  ylab = "Body dissatisfaction (perceived - ideal)"
 ) {
   require(dplyr)
   require(ggplot2)

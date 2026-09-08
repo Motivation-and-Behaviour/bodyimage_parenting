@@ -1,12 +1,11 @@
-#' Baseline characteristics by modal trajectory class
+#' .. content for \description{} (no empty lines) ..
 #'
-#' tableone-style table of baseline (age 8) characteristics stratified by
-#' modal class assignment (mirrors `make_descriptives_table()`). Children
-#' without an age-8 record are not shown (no baseline row to summarise).
+#' .. content for \details{} ..
 #'
-#' @param class_assignments Output of `extract_class_assignments()`.
-#' @param df_model Modelling data from `make_model_data()`.
-#' @return Character matrix from `tableone::CreateTableOne()`.
+#' @title
+#' @param class_assignments
+#' @param df_model
+#' @return
 #' @author Taren Sanders
 #' @export
 make_class_descriptives_table <- function(class_assignments, df_model) {

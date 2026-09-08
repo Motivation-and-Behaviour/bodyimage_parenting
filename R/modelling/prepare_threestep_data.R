@@ -1,19 +1,12 @@
-#' Build the child x class dataset for the three-step membership models
+#' .. content for \description{} (no empty lines) ..
 #'
-#' Proportional posterior weighting (Vermunt, 2010): each child contributes
-#' one row per latent class, weighted by their posterior probability of
-#' membership (rows with negligible weight dropped). With `modal = TRUE`,
-#' returns instead one row per child at their modal class with weight 1 (the
-#' modal-assignment sensitivity specification). Baseline covariates and
-#' (time-invariant) sex are joined per child; complete-case filtering happens
-#' per model in `fit_threestep_multinom()`, since the primary and
-#' both-parent models need different covariate sets.
+#' .. content for \details{} ..
 #'
-#' @param class_assignments Output of `extract_class_assignments()`.
-#' @param df_model Modelling data from `make_model_data()`.
-#' @param modal Use modal assignment with unit weights instead of
-#'   proportional posterior weights.
-#' @return Tibble: `id`, `id_num`, `class`, `w`, `sex`, `_bl` covariates.
+#' @title
+#' @param class_assignments
+#' @param df_model
+#' @param modal logical. Use modal assignment instead of posterior weights.
+#' @return
 #' @author Taren Sanders
 #' @export
 prepare_threestep_data <- function(class_assignments, df_model, modal = FALSE) {
